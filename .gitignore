@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+output_dxf/
+output_reports/
+*.egg-info/
+build/
+dist/
+.idea/
+.vscode/

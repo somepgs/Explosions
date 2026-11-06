@@ -1,0 +1,41 @@
+{
+  "source": "Приказ МИР РК от 30.12.2014 № 343 (в ред. Приказа МИР РК № 895 и Приказа МЧС РК № 120), Приложение 11",
+  "uvv_damage_degrees": {
+    "1": {
+      "description": "Степень 1: отсутствие повреждений",
+      "open_surface": {"K_v_min": 50.0, "K_v_max": 150.0, "k_v": 5.0},
+      "soil_covered_1_5m": {"K_v_min": 30.0, "K_v_max": 60.0, "k_v": 2.0}
+    },
+    "2": {
+      "description": "Степень 2: легкие повреждения остекления до 10%, рам, штукатурки",
+      "open_surface": {"K_v_min": 15.0, "K_v_max": 30.0, "k_v_min": 1.5, "k_v_max": 3.0},
+      "soil_covered_1_5m": {"K_v_min": 8.0, "K_v_max": 12.0, "k_v_min": 0.8, "k_v_max": 1.2}
+    },
+    "3": {
+      "description": "Степень 3: повреждение перегородок, рам, трещины в стенах",
+      "open_surface": {"K_v_min": 7.0, "K_v_max": 10.0, "k_v_min": 0.7, "k_v_max": 1.0},
+      "soil_covered_1_5m": {"K_v_min": 4.0, "K_v_max": 6.0, "k_v_min": 0.4, "k_v_max": 0.6}
+    },
+    "4": {
+      "description": "Степень 4: сильные трещины, частичное обрушение",
+      "open_surface": {"K_v_min": 3.5, "K_v_max": 6.0}
+    },
+    "5": {
+      "description": "Степень 5: разрушение зданий",
+      "open_surface": {"K_v_min": 1.5, "K_v_max": 3.0}
+    }
+  },
+  "detonation_coefficients_kd": {
+    "DEFAULT_STACK_WIDTH_B_M": 1.6,
+    "profiles": {
+      "UNBERMED_TO_UNBERMED_HIGH_SENS": 2.25,
+      "UNBERMED_TO_UNBERMED_STANDARD": 1.6,
+      "UNBERMED_TO_BERMED": 1.0,
+      "BERMED_TO_UNBERMED": 1.2,
+      "BERMED_TO_BERMED_STANDARD": 0.8,
+      "BERMED_TO_BERMED_GRANULAR": 0.6,
+      "BURIED_TO_BURIED": 0.4
+    }
+  },
+  "tabular_lookup_grids": []
+}
