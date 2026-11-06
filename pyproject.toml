@@ -18,6 +18,9 @@ dev = [
     "pytest>=8.0",
 ]
 
+[project.scripts]
+explosions-core = "explosions_core.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["explosions_core*"]

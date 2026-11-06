@@ -1,5 +1,7 @@
 """Раздел 8: сводный протокол нормативного контроля (чек-лист соответствия Приказу № 343)."""
 
+from explosions_core.calc.geometry import storage_key
+from explosions_core.calc.lightning_protection import lightning_required_violation
 from explosions_core.domain import (
     DetonationPairResult,
     NormativeViolation,
@@ -9,15 +11,35 @@ from explosions_core.domain import (
 )
 from explosions_core.export.reports.docx_styles import add_heading, add_paragraph, add_red_bold_paragraph, add_table
 from explosions_core.export.reports.note.records import BermRecord, LightningRecord, StorageSizingRecord
-from explosions_core.norms.references import CLAUSE_BERM, CLAUSE_DETONATION, CLAUSE_RACK, CLAUSE_STACK, CLAUSE_UVV
+from explosions_core.norms.references import (
+    CLAUSE_BERM,
+    CLAUSE_COMPATIBILITY,
+    CLAUSE_COMPATIBILITY_EXCEPTION,
+    CLAUSE_DETONATION,
+    CLAUSE_LIGHTNING_REQUIRED,
+    CLAUSE_LIGHTNING_SO153,
+    CLAUSE_LIGHTNING_SPHERE,
+    CLAUSE_MOBILE_PAYLOAD,
+    CLAUSE_MOBILE_POWDER,
+    CLAUSE_PRP,
+    CLAUSE_RACK,
+    CLAUSE_STACK,
+    CLAUSE_UVV,
+)
+from explosions_core.validators.compatibility import validate_compatibility
 from explosions_core.validators.layout_and_perimeter import (
+    governing_warehouse_duration,
     validate_internal_layout,
     validate_mobile_warehouse,
     validate_perimeter,
     validate_prp,
-    validate_short_term_limits,
 )
-from explosions_core.validators.compatibility import validate_compatibility
+
+PERIMETER_CLAUSES = {
+    WarehouseDuration.PERMANENT: "п. 590 (подпункт 5), 592, 593, 16 Приказа № 343",
+    WarehouseDuration.TEMPORARY: "п. 618 (и п. 590, 592, 593), 16 Приказа № 343",
+    WarehouseDuration.SHORT_TERM: "п. 621, 16 Приказа № 343",
+}
 
 CHECK_ROW_COLUMNS = ["Проверка", "Норма", "Статус", "Детали"]
 
@@ -48,10 +70,18 @@ def add_section_8(
     lightning_records: list[LightningRecord],
 ) -> None:
     add_heading(doc, "8. Сводный протокол нормативного контроля (чек-лист соответствия Приказу № 343)", level=1)
+    duration = governing_warehouse_duration(project)
+    protected = {record.storage_id for record in lightning_records}
+    lightning_violations = [v for r in lightning_records for v in r.result.violations]
+    for storage in project.storages:
+        key = storage_key(storage)
+        missing = lightning_required_violation(storage, key, has_protection=key in protected)
+        if missing is not None:
+            lightning_violations.append(missing)
     checks: list[tuple[str, str, list[NormativeViolation], bool]] = [
         (
             "Совместимость ВМ в хранилищах",
-            "п. 8 Приложения 2 Приказа № 343",
+            f"{CLAUSE_COMPATIBILITY}; исключения — {CLAUSE_COMPATIBILITY_EXCEPTION}",
             list(validate_compatibility(project.storages).violations),
             True,
         ),
@@ -68,26 +98,20 @@ def add_section_8(
             bool(sizing_records),
         ),
         (
-            "Периметр, ограда, запретная зона 50 м, зона запрета огня 100 м",
-            "Приказ № 343, генплан; п. 16 (зона огня)",
+            "Генплан: ограда, запретная зона, расстояния от ограды, запрет огня 100 м",
+            PERIMETER_CLAUSES[duration],
             list(validate_perimeter(project).violations),
             True,
         ),
         (
             "Погрузочно-разгрузочная площадка (ПРП)",
-            "п. 48 Приказа № 343",
+            CLAUSE_PRP,
             list(validate_prp(project).violations),
             project.unloading_platform is not None,
         ),
         (
-            "Кратковременные расходные склады",
-            "п. 62, 64, 66, 74 Приказа № 343",
-            list(validate_short_term_limits(project).violations),
-            any(s.duration == WarehouseDuration.SHORT_TERM for s in project.storages),
-        ),
-        (
-            "Передвижной склад: загрузка до 2/3 грузоподъемности",
-            "п. 74 Приказа № 343",
+            "Перевозка ВМ: загрузка до 2/3 грузоподъемности, пороха не ближе 0,5 м",
+            f"{CLAUSE_MOBILE_PAYLOAD}; {CLAUSE_MOBILE_POWDER}",
             list(validate_mobile_warehouse(project).violations),
             project.mobile_warehouse is not None,
         ),
@@ -99,9 +123,9 @@ def add_section_8(
         ),
         (
             "Молниезащита хранилищ",
-            "п. 8.1.1 СП РК 2.04-103-2013",
-            [v for r in lightning_records for v in r.result.violations],
-            bool(lightning_records),
+            f"{CLAUSE_LIGHTNING_REQUIRED}; {CLAUSE_LIGHTNING_SPHERE} / {CLAUSE_LIGHTNING_SO153}",
+            lightning_violations,
+            bool(lightning_records) or bool(lightning_violations),
         ),
         (
             "Безопасные расстояния по действию УВВ",

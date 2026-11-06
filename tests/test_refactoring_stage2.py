@@ -21,6 +21,7 @@ from explosions_core.calc.safe_distances import SafeDistanceEngine, calculate_cl
 from explosions_core.domain import (
     ChargePlacementType,
     CompatibilityGroup,
+    DetonationMaterialClass,
     ExplosiveItem,
     LightningZoneType,
     LocationType,
@@ -41,9 +42,10 @@ def _storage(name: str, x_m: float, y_m: float, length_m: float, width_m: float)
         items=[
             ExplosiveItem(
                 name="ВВ",
-                group=CompatibilityGroup.B,
+                group=CompatibilityGroup.D,
                 mass_kg=1000.0,
                 tnt_equivalent_coeff=1.0,
+                detonation_class=DetonationMaterialClass.AN_BASED,
             )
         ],
         x_m=x_m,
@@ -161,7 +163,7 @@ def test_storage_gate_width_follows_entrance_opening(tmp_path: Path) -> None:
     berm_input = BermDesignInput(
         storage_length_m=20.0,
         storage_width_m=10.0,
-        eaves_height_m=3.5,
+        load_top_height_m=2.5,
         soil_material=BermSoilMaterial.PLASTIC_CLAY_LOAM,
         natural_slope_angle_deg=45.0,
         entrance_opening_width_m=3.0,

@@ -30,6 +30,7 @@ from explosions_core.domain import (
     BermDesignInput,
     BermDesignResult,
     LightningArresterMast,
+    LightningMethod,
     LightningProtectionResult,
     StorageMethod,
     StorageSizingInput,
@@ -373,6 +374,15 @@ def _draw_dimensions(
     )
 
 
+def _lightning_method_label(result: LightningProtectionResult) -> str:
+    if result.method == LightningMethod.ROLLING_SPHERE_SP_RK:
+        return f"катящаяся сфера, уровень {result.protection_level.value} (СП РК 2.04-103-2013, п. 7.2)"
+    if result.method == LightningMethod.SINGLE_ROD_SO_153:
+        return f"зона надежностью {result.reliability.value} (СО 153-34.21.122-2003, табл. 3.4)"
+    zone = result.zone_type.value if result.zone_type is not None else "—"
+    return f"{zone} (РД 34.21.122-87)"
+
+
 def _draw_stamp(
     msp,
     sizing_input: StorageSizingInput,
@@ -393,10 +403,11 @@ def _draw_stamp(
             f"Ширина прохода = {sizing_result.required_aisle_width_m:.2f} м (п. 579-580 Приказа № 343)",
             f"Отступ от стен = {sizing_input.wall_clearance_m:.2f} м (п. 579)",
             f"Высота укладки H = {sizing_result.total_loaded_height_m:.2f} м (п. 579-580)",
-            f"Высота обвалования H_в = {berm_result.berm_height_m:.2f} м (п. 602-607)",
-            f"Ширина гребня = {berm_result.crest_width_m:.2f} м (п. 602-607)",
-            f"Ширина подошвы = {berm_result.base_width_m:.2f} м (п. 602-607)",
-            f"Молниезащита: {lightning_result.zone_type.value} (СП РК 2.04-103-2013, п. 8.1.1)",
+            f"Высота обвалования H_в = {berm_result.berm_height_m:.2f} м, гребень на "
+            f"{berm_input.crest_elevation_above_load_m:.2f} м выше груза (п. 604)",
+            f"Ширина вала по верху = {berm_result.crest_width_m:.2f} м (п. 604)",
+            f"Ширина подошвы = {berm_result.base_width_m:.2f} м (п. 604)",
+            f"Молниезащита: {_lightning_method_label(lightning_result)}",
         ]
     )
     add_mtext(msp, text, (stamp_x, half_width), LAYER_DIMENSIONS, char_height=TITLE_TEXT_HEIGHT_M / 2.0)

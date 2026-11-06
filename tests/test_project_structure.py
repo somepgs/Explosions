@@ -57,7 +57,8 @@ def test_project_input_accepts_external_targets_without_rebuild() -> None:
 def test_appendix11_tables_are_inside_package() -> None:
     assert DEFAULT_TABLES_PATH.is_file()
     assert DEFAULT_TABLES_PATH.parent.parent.name == "norms"
-    assert "detonation_coefficients_kd" in load_appendix11_tables()
+    tables = load_appendix11_tables()
+    assert {"table_2_uvv", "table_4_kd", "table_5_rd_b_1_6_m"} <= set(tables)
 
 
 def test_validators_cite_clauses_from_registry() -> None:

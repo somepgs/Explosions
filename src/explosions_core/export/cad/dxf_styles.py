@@ -8,6 +8,8 @@ import ezdxf
 from ezdxf.enums import TextEntityAlignment
 from ezdxf.document import Drawing
 
+from explosions_core.norms.constants_rk343 import DEFAULT_WALL_THICKNESS_M
+
 DXF_VERSION = "R2010"
 INSUNITS_METERS = 6
 MEASUREMENT_METRIC = 1
@@ -15,7 +17,7 @@ TEXT_STYLE_NAME = "GOST_TEXT"
 TEXT_FONT = "arial.ttf"
 DIM_STYLE_NAME = "GOST_M"
 DIM_BASE_STYLE = "EZDXF"
-WALL_THICKNESS_M = 0.40
+WALL_THICKNESS_M = DEFAULT_WALL_THICKNESS_M
 MAST_MARK_RADIUS_M = 0.3
 TEXT_HEIGHT_M = 0.3
 TITLE_TEXT_HEIGHT_M = 0.6

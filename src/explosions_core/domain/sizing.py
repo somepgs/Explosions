@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from explosions_core.domain.base import InputModel
 from explosions_core.domain.enums import CompatibilityGroup, PackagingType, StorageMethod
 from explosions_core.domain.explosives import UnitPackageSpec
 from explosions_core.domain.results import NormativeViolation
@@ -13,7 +14,7 @@ from explosions_core.norms.constants_rk343 import (
 )
 
 
-class StorageSizingInput(BaseModel):
+class StorageSizingInput(InputModel):
     model_config = ConfigDict(populate_by_name=True)
 
     total_net_explosive_mass_kg: float = Field(gt=0)

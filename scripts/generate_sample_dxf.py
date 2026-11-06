@@ -16,10 +16,11 @@ from explosions_core.domain import (  # noqa: E402
     BermDesignInput,
     BermSoilMaterial,
     CompatibilityGroup,
+    DetonationMaterialClass,
     ExplosiveItem,
     ExternalProtectedObject,
     LightningArresterMast,
-    LightningZoneType,
+    LightningProtectionLevel,
     LocationType,
     PackagingType,
     StorageBuilding,
@@ -41,7 +42,7 @@ STORAGE_WIDTH_M = 10.0
 def _storage_sizing_input() -> StorageSizingInput:
     return StorageSizingInput(
         total_net_explosive_mass_kg=40000.0,
-        compatibility_group=CompatibilityGroup.B,
+        compatibility_group=CompatibilityGroup.D,
         storage_method=StorageMethod.STACK,
         packaging_type=PackagingType.BAG,
         unit_spec=UnitPackageSpec(
@@ -56,11 +57,11 @@ def _storage_sizing_input() -> StorageSizingInput:
     )
 
 
-def _berm_input() -> BermDesignInput:
+def _berm_input(load_top_height_m: float) -> BermDesignInput:
     return BermDesignInput(
         storage_length_m=STORAGE_LENGTH_M,
         storage_width_m=STORAGE_WIDTH_M,
-        eaves_height_m=3.5,
+        load_top_height_m=load_top_height_m,
         soil_material=BermSoilMaterial.PLASTIC_CLAY_LOAM,
         natural_slope_angle_deg=45.0,
     )
@@ -76,10 +77,11 @@ def _storage(name: str, storage_id: str, x_m: float, y_m: float, mass_kg: float)
         is_bermed=True,
         items=[
             ExplosiveItem(
-                name="ВВ",
-                group=CompatibilityGroup.B,
+                name="ВВ на основе АС",
+                group=CompatibilityGroup.D,
                 mass_kg=mass_kg,
                 tnt_equivalent_coeff=1.0,
+                detonation_class=DetonationMaterialClass.AN_BASED,
             )
         ],
         x_m=x_m,
@@ -100,16 +102,16 @@ def _project_input() -> WarehouseProjectInput:
         external_targets=[
             ExternalProtectedObject(
                 object_id="ROAD",
-                name="Автодорога",
-                allowed_damage_degree=2,
-                actual_distance_m=150.0,
+                name="Автодорога с небольшим движением",
+                allowed_damage_degree=4,
+                actual_distance_m=600.0,
                 bearing_deg=90.0,
             ),
             ExternalProtectedObject(
                 object_id="POWER",
                 name="ЛЭП",
                 allowed_damage_degree=3,
-                actual_distance_m=220.0,
+                actual_distance_m=550.0,
                 bearing_deg=270.0,
             ),
         ],
@@ -119,7 +121,7 @@ def _project_input() -> WarehouseProjectInput:
 def main() -> None:
     sizing_input = _storage_sizing_input()
     sizing_result = StorageSizingCalculator().calculate(sizing_input)
-    berm_input = _berm_input()
+    berm_input = _berm_input(sizing_result.total_loaded_height_m)
     berm_result = calculate_berm_design(berm_input)
     masts = [
         LightningArresterMast(mast_id="М1", x_m=-15.0, y_m=10.0, height_h_m=16.0),
@@ -127,11 +129,12 @@ def main() -> None:
     ]
     lightning_result = calculate_lightning_protection(
         masts,
-        LightningZoneType.ZONE_A,
+        None,
         storage_length_m=STORAGE_LENGTH_M,
         storage_width_m=STORAGE_WIDTH_M,
         eaves_height_m=3.5,
         ridge_height_m=5.5,
+        protection_level=LightningProtectionLevel.LEVEL_I,
     )
 
     detail_path = export_storage_detail_dxf(

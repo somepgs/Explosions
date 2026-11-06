@@ -3,22 +3,22 @@ from pydantic import ValidationError
 
 from explosions_core.norms.constants_rk343 import (
     MAX_MOBILE_PAYLOAD_RATIO,
-    MAX_SHORT_TERM_SINGLE_STORAGE_SI_PCS,
-    MAX_SHORT_TERM_SINGLE_STORAGE_VM_KG,
-    MAX_SHORT_TERM_TOTAL_SI_PCS,
-    MAX_SHORT_TERM_TOTAL_VM_KG,
     MIN_AISLE_WIDTH_RACK_M,
     MIN_AISLE_WIDTH_STACK_M,
     MIN_DIST_FENCE_TO_GUARDHOUSE_M,
+    MIN_DIST_FENCE_TO_GUARDHOUSE_SHORT_TERM_M,
     MIN_DIST_FENCE_TO_STORAGE_M,
+    MIN_DIST_FENCE_TO_STORAGE_SHORT_TERM_M,
     MIN_DIST_FENCE_TO_TARE_STORAGE_M,
-    MIN_FENCE_HEIGHT_M,
+    MIN_FENCE_HEIGHT_PERMANENT_M,
+    MIN_FENCE_HEIGHT_SHORT_TERM_M,
+    MIN_FENCE_HEIGHT_TEMPORARY_M,
     MIN_FLOOR_DECK_HEIGHT_M,
     MIN_FORBIDDEN_ZONE_WIDTH_M,
     MIN_MOBILE_POWDER_SEPARATION_M,
-    MIN_MOBILE_SAFE_STANDOFF_M,
     MIN_OPEN_FIRE_BAN_RADIUS_M,
     MIN_PRP_FENCE_DIST_M,
+    MIN_PRP_FENCE_HEIGHT_M,
     MIN_PRP_SWITCH_DIST_M,
     MIN_WALL_CLEARANCE_M,
     MAX_PRP_GUARDHOUSE_DIST_M,
@@ -52,7 +52,6 @@ from explosions_core.validators.layout_and_perimeter import (
     validate_perimeter,
     validate_prp,
     validate_project,
-    validate_short_term_limits,
 )
 
 
@@ -98,7 +97,7 @@ def codes(result: ValidationResult) -> list[str]:
 
 COMPLIANT_PERIMETER = {
     "forbidden_zone_width_m": MIN_FORBIDDEN_ZONE_WIDTH_M,
-    "fence_height_m": MIN_FENCE_HEIGHT_M,
+    "fence_height_m": MIN_FENCE_HEIGHT_PERMANENT_M,
     "fence_to_nearest_storage_m": MIN_DIST_FENCE_TO_STORAGE_M,
     "fence_to_guardhouse_m": MIN_DIST_FENCE_TO_GUARDHOUSE_M,
     "fence_to_tare_storage_m": MIN_DIST_FENCE_TO_TARE_STORAGE_M,
@@ -169,6 +168,39 @@ def test_powder_exception_does_not_cover_third_group():
         ]
     )
     assert codes(check_storage_compatibility(storage)) == ["COMPAT_MIXED_GROUPS"]
+
+
+@pytest.mark.parametrize("other", [CompatibilityGroup.B, CompatibilityGroup.C, CompatibilityGroup.D])
+def test_group_g_with_b_c_d_is_allowed_by_clause_9_2(other):
+    storage = make_storage([make_item(name="Огнепроводный шнур", group=CompatibilityGroup.G), make_item(group=other)])
+    assert check_storage_compatibility(storage).is_valid
+
+
+def test_group_g_with_group_e_is_not_allowed():
+    storage = make_storage([make_item(group=CompatibilityGroup.G), make_item(group=CompatibilityGroup.E)])
+    assert codes(check_storage_compatibility(storage)) == ["COMPAT_MIXED_GROUPS"]
+
+
+def test_detonating_cord_d_with_detonators_b_is_allowed_by_clause_9_3():
+    storage = make_storage(
+        [
+            make_item(name="Детонирующий шнур", group=CompatibilityGroup.D, is_detonating_cord=True),
+            make_item(name="Электродетонаторы", group=CompatibilityGroup.B, is_initiating_device=True),
+        ]
+    )
+    assert check_storage_compatibility(storage).is_valid
+
+
+def test_explosive_d_with_detonators_b_is_not_allowed():
+    storage = make_storage(
+        [
+            make_item(name="Гранулит", group=CompatibilityGroup.D),
+            make_item(name="Электродетонаторы", group=CompatibilityGroup.B, is_initiating_device=True),
+        ]
+    )
+    result = check_storage_compatibility(storage)
+    assert codes(result) == ["COMPAT_MIXED_GROUPS"]
+    assert "B+D" in result.violations[0].description
 
 
 def test_validate_compatibility_collects_violations_from_all_storages():
@@ -316,7 +348,7 @@ def test_perimeter_skipped_when_values_not_provided():
     ("field", "value", "code"),
     [
         ("forbidden_zone_width_m", MIN_FORBIDDEN_ZONE_WIDTH_M - 0.1, "PERIMETER_FORBIDDEN_ZONE_WIDTH"),
-        ("fence_height_m", MIN_FENCE_HEIGHT_M - 0.1, "PERIMETER_FENCE_HEIGHT"),
+        ("fence_height_m", MIN_FENCE_HEIGHT_PERMANENT_M - 0.1, "PERIMETER_FENCE_HEIGHT"),
         ("fence_to_nearest_storage_m", MIN_DIST_FENCE_TO_STORAGE_M - 0.1, "PERIMETER_FENCE_TO_STORAGE"),
         ("fence_to_guardhouse_m", MIN_DIST_FENCE_TO_GUARDHOUSE_M - 0.1, "PERIMETER_FENCE_TO_GUARDHOUSE"),
         ("fence_to_tare_storage_m", MIN_DIST_FENCE_TO_TARE_STORAGE_M - 0.1, "PERIMETER_FENCE_TO_TARE_STORAGE"),
@@ -328,10 +360,56 @@ def test_perimeter_below_minimum_violates(field, value, code):
     assert codes(validate_perimeter(make_project(**values))) == [code]
 
 
+def test_permanent_fence_2_m_violates_clause_593():
+    values = {**COMPLIANT_PERIMETER, "fence_height_m": 2.0}
+    result = validate_perimeter(make_project(**values))
+    assert codes(result) == ["PERIMETER_FENCE_HEIGHT"]
+    assert "п. 593" in result.violations[0].clause
+
+
+def test_temporary_warehouse_fence_2_m_is_valid_and_lower_violates_clause_618():
+    storages = [make_storage(duration=WarehouseDuration.TEMPORARY)]
+    valid = {**COMPLIANT_PERIMETER, "fence_height_m": MIN_FENCE_HEIGHT_TEMPORARY_M}
+    assert validate_perimeter(make_project(storages=storages, **valid)).is_valid
+    invalid = {**COMPLIANT_PERIMETER, "fence_height_m": MIN_FENCE_HEIGHT_TEMPORARY_M - 0.1}
+    result = validate_perimeter(make_project(storages=storages, **invalid))
+    assert codes(result) == ["PERIMETER_FENCE_HEIGHT"]
+    assert "п. 618" in result.violations[0].clause
+
+
+def test_short_term_warehouse_uses_clause_621_limits():
+    storages = [make_storage(duration=WarehouseDuration.SHORT_TERM)]
+    compliant = {
+        "fence_height_m": MIN_FENCE_HEIGHT_SHORT_TERM_M,
+        "fence_to_nearest_storage_m": MIN_DIST_FENCE_TO_STORAGE_SHORT_TERM_M,
+        "fence_to_guardhouse_m": MIN_DIST_FENCE_TO_GUARDHOUSE_SHORT_TERM_M,
+        "open_fire_ban_radius_m": MIN_OPEN_FIRE_BAN_RADIUS_M,
+    }
+    assert validate_perimeter(make_project(storages=storages, **compliant)).is_valid
+    broken = {**compliant, "fence_height_m": 1.4, "fence_to_nearest_storage_m": 19.0, "fence_to_guardhouse_m": 14.0}
+    result = validate_perimeter(make_project(storages=storages, **broken))
+    assert codes(result) == ["PERIMETER_FENCE_HEIGHT", "PERIMETER_FENCE_TO_STORAGE", "PERIMETER_FENCE_TO_GUARDHOUSE"]
+    assert all("п. 621" in violation.clause for violation in result.violations)
+
+
+def test_permanent_requirements_govern_mixed_warehouse():
+    storages = [make_storage(duration=WarehouseDuration.SHORT_TERM), make_storage(name="Постоянное")]
+    values = {**COMPLIANT_PERIMETER, "fence_height_m": MIN_FENCE_HEIGHT_SHORT_TERM_M}
+    assert codes(validate_perimeter(make_project(storages=storages, **values))) == ["PERIMETER_FENCE_HEIGHT"]
+
+
+def test_guardhouse_inside_wider_forbidden_zone_violates_clause_592():
+    values = {**COMPLIANT_PERIMETER, "forbidden_zone_width_m": 60.0, "fence_to_guardhouse_m": 55.0}
+    result = validate_perimeter(make_project(**values))
+    assert codes(result) == ["PERIMETER_FENCE_TO_GUARDHOUSE"]
+    assert result.violations[0].required_value == 60.0
+
+
 # Погрузочно-разгрузочная площадка (п. 48)
 
 def test_prp_compliant_is_valid():
     platform = UnloadingPlatformConfig(
+        fence_height_m=MIN_PRP_FENCE_HEIGHT_M,
         loading_point_to_fence_m=MIN_PRP_FENCE_DIST_M,
         switch_distance_m=MIN_PRP_SWITCH_DIST_M,
         guardhouse_distance_m=MAX_PRP_GUARDHOUSE_DIST_M,
@@ -345,6 +423,11 @@ def test_prp_loading_point_closer_than_15_m_to_fence_violates():
     assert codes(result) == ["PRP_FENCE_DISTANCE"]
     assert result.violations[0].actual_value == 14.0
     assert result.violations[0].required_value == MIN_PRP_FENCE_DIST_M
+
+
+def test_prp_fence_lower_than_2_m_violates():
+    platform = UnloadingPlatformConfig(fence_height_m=1.8)
+    assert codes(validate_prp(make_project(unloading_platform=platform))) == ["PRP_FENCE_HEIGHT"]
 
 
 def test_prp_switch_closer_than_50_m_violates():
@@ -361,59 +444,7 @@ def test_prp_skipped_without_platform():
     assert validate_prp(make_project()).is_valid
 
 
-# Кратковременные расходные склады (п. 62, 64, 66, 74)
-
-def test_short_term_single_storage_mass_above_limit_violates():
-    storage = make_storage(
-        [make_item(mass_kg=MAX_SHORT_TERM_SINGLE_STORAGE_VM_KG + 1)],
-        duration=WarehouseDuration.SHORT_TERM,
-    )
-    result = validate_short_term_limits(make_project(storages=[storage]))
-    assert "SHORT_TERM_SINGLE_STORAGE_VM" in codes(result)
-
-
-def test_short_term_single_storage_mass_at_limit_is_valid():
-    storage = make_storage(
-        [make_item(mass_kg=MAX_SHORT_TERM_SINGLE_STORAGE_VM_KG)],
-        duration=WarehouseDuration.SHORT_TERM,
-    )
-    assert validate_short_term_limits(make_project(storages=[storage])).is_valid
-
-
-def test_short_term_single_storage_si_above_limit_violates():
-    storage = make_storage(
-        [make_item(mass_kg=1.0, si_count=MAX_SHORT_TERM_SINGLE_STORAGE_SI_PCS + 1)],
-        duration=WarehouseDuration.SHORT_TERM,
-    )
-    assert "SHORT_TERM_SINGLE_STORAGE_SI" in codes(validate_short_term_limits(make_project(storages=[storage])))
-
-
-def test_short_term_total_mass_above_limit_violates_even_if_each_storage_is_within_limit():
-    storages = [
-        make_storage([make_item(mass_kg=14000.0)], duration=WarehouseDuration.SHORT_TERM, name=f"S{i}")
-        for i in range(4)
-    ]
-    result = validate_short_term_limits(make_project(storages=storages))
-    assert codes(result) == ["SHORT_TERM_TOTAL_VM"]
-    assert result.violations[0].required_value == MAX_SHORT_TERM_TOTAL_VM_KG
-
-
-def test_short_term_total_si_above_limit_violates():
-    storages = [
-        make_storage([make_item(mass_kg=1.0, si_count=20000)], duration=WarehouseDuration.SHORT_TERM, name=f"S{i}")
-        for i in range(4)
-    ]
-    result = validate_short_term_limits(make_project(storages=storages))
-    assert codes(result) == ["SHORT_TERM_TOTAL_SI"]
-    assert result.violations[0].required_value == MAX_SHORT_TERM_TOTAL_SI_PCS
-
-
-def test_permanent_storage_is_not_limited_by_short_term_rules():
-    storage = make_storage([make_item(mass_kg=30000.0)], duration=WarehouseDuration.PERMANENT)
-    assert validate_short_term_limits(make_project(storages=[storage])).is_valid
-
-
-# Передвижные склады (п. 62, 66, 74)
+# Перевозка ВМ (п. 74); п. 62–66 исключены и не проверяются
 
 def make_mobile(**overrides) -> MobileWarehouseConfig:
     base = {
@@ -421,8 +452,6 @@ def make_mobile(**overrides) -> MobileWarehouseConfig:
         "rated_payload_kg": 10000.0,
         "payload_kg": 6000.0,
         "powder_separation_m": MIN_MOBILE_POWDER_SEPARATION_M,
-        "distance_to_blasting_site_m": MIN_MOBILE_SAFE_STANDOFF_M,
-        "distance_to_settlement_m": MIN_MOBILE_SAFE_STANDOFF_M,
     }
     base.update(overrides)
     return MobileWarehouseConfig(**base)
@@ -458,14 +487,27 @@ def test_mobile_powder_separation_is_not_checked_without_mixing():
     assert validate_mobile_warehouse(make_project(mobile_warehouse=mobile)).is_valid
 
 
-def test_mobile_blasting_site_closer_than_200_m_violates():
-    mobile = make_mobile(distance_to_blasting_site_m=MIN_MOBILE_SAFE_STANDOFF_M - 1)
-    assert codes(validate_mobile_warehouse(make_project(mobile_warehouse=mobile))) == ["MOBILE_BLASTING_STANDOFF"]
+def test_mobile_payload_rule_applies_only_to_joint_vv_and_si_transport():
+    only_vv = [make_item(name="Гранулит", group=CompatibilityGroup.D)]
+    mobile = make_mobile(items=only_vv, payload_kg=9000.0)
+    assert validate_mobile_warehouse(make_project(mobile_warehouse=mobile)).is_valid
+    joint = only_vv + [make_item(name="Детонаторы", group=CompatibilityGroup.B, is_initiating_device=True)]
+    mobile = make_mobile(items=joint, payload_kg=9000.0)
+    result = validate_mobile_warehouse(make_project(mobile_warehouse=mobile))
+    assert codes(result) == ["MOBILE_PAYLOAD_OVERLOAD"]
+    assert "п. 74" in result.violations[0].clause
 
 
-def test_mobile_settlement_closer_than_200_m_violates():
-    mobile = make_mobile(distance_to_settlement_m=150.0)
-    assert codes(validate_mobile_warehouse(make_project(mobile_warehouse=mobile))) == ["MOBILE_SETTLEMENT_STANDOFF"]
+def test_specialized_vehicle_full_load_allowed_without_groups_b_and_f():
+    items = [
+        make_item(name="Гранулит", group=CompatibilityGroup.D),
+        make_item(name="НСИ", group=CompatibilityGroup.S, is_initiating_device=True),
+    ]
+    mobile = make_mobile(items=items, payload_kg=10000.0, is_specialized_vehicle=True)
+    assert validate_mobile_warehouse(make_project(mobile_warehouse=mobile)).is_valid
+    with_b = items + [make_item(name="Детонаторы", group=CompatibilityGroup.B, is_initiating_device=True)]
+    mobile = make_mobile(items=with_b, payload_kg=10000.0, is_specialized_vehicle=True)
+    assert codes(validate_mobile_warehouse(make_project(mobile_warehouse=mobile))) == ["MOBILE_PAYLOAD_OVERLOAD"]
 
 
 def test_mobile_skipped_without_config():

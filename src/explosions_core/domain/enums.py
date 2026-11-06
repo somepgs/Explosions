@@ -28,6 +28,7 @@ class CompatibilityGroup(str, Enum):
     C = "C"
     D = "D"
     E = "E"
+    F = "F"
     G = "G"
     N = "N"
     S = "S"
@@ -47,12 +48,19 @@ class StorageMethod(str, Enum):
 
 class ChargePlacementType(str, Enum):
     OPEN_SURFACE = "open_surface"
-    SOIL_COVERED_1_5M = "soil_covered_1_5m"
+    BURIED_OWN_HEIGHT = "buried_own_height"
+
+
+class DetonationMaterialClass(str, Enum):
+    AN_BASED = "an_based"
+    NITROESTER_40_PLUS = "nitroester_40_plus"
+    TNT = "tnt"
+    DETONATORS = "detonators"
 
 
 class DetonationFormulaType(str, Enum):
-    FORMULA_18_CUBIC = "formula_18_cubic"
-    FORMULA_19_STACK_WIDTH = "formula_19_stack_width"
+    FORMULA_19 = "formula_19"
+    TABLE_5 = "table_5"
     MAX_CONSERVATIVE = "max_conservative"
 
 
@@ -66,3 +74,26 @@ class BermSoilMaterial(str, Enum):
 class LightningZoneType(str, Enum):
     ZONE_A = "zone_a"
     ZONE_B = "zone_b"
+
+
+class LightningMethod(str, Enum):
+    ROLLING_SPHERE_SP_RK = "rolling_sphere_sp_rk"
+    SINGLE_ROD_SO_153 = "single_rod_so_153"
+    ZONES_RD_34_21_122 = "zones_rd_34_21_122"
+
+
+class LightningReliability(str, Enum):
+    P_0_9 = "0.9"
+    P_0_99 = "0.99"
+    P_0_999 = "0.999"
+
+
+class LightningProtectionLevel(str, Enum):
+    LEVEL_I = "I"
+    LEVEL_II = "II"
+    LEVEL_III = "III"
+
+
+class UVVMethod(str, Enum):
+    TABLE_2_FORMULAS = "table_2_formulas"
+    TABLE_3 = "table_3"

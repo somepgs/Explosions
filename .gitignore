@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 output_dxf/
 output_reports/
+output_project/
 *.egg-info/
 build/
 dist/

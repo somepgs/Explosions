@@ -1,41 +1,77 @@
 {
-  "source": "Приказ МИР РК от 30.12.2014 № 343 (в ред. Приказа МИР РК № 895 и Приказа МЧС РК № 120), Приложение 11",
-  "uvv_damage_degrees": {
+  "source": "Приказ МИР РК от 30.12.2014 № 343 (ред. 02.10.2025, текст из Documentation/v1400010244.02-10-2025.rus.pdf), Приложение 11",
+  "verification": "Таблицы 2, 4 и 5 выверены по текстовому слою PDF; формула (19) проверена против таблицы 5 (допуск 1 м). Подробности: docs/norms_verification.md",
+  "default_stack_width_b_m": 1.6,
+  "table_2_note": "formula_10_above_t: при Q больше указанной массы (т) применяется формула (10) с K_v, иначе формула (11) с k_v; null — только формула (11). Столбец n = 3 (заряды выброса) не внесен — к складам не относится.",
+  "table_2_uvv": {
     "1": {
-      "description": "Степень 1: отсутствие повреждений",
-      "open_surface": {"K_v_min": 50.0, "K_v_max": 150.0, "k_v": 5.0},
-      "soil_covered_1_5m": {"K_v_min": 30.0, "K_v_max": 60.0, "k_v": 2.0}
+      "open": {"formula_10_above_t": 10, "k_v": [50, 150], "K_v": [400, 400]},
+      "buried": {"formula_10_above_t": 20, "k_v": [20, 50], "K_v": [200, 200]}
     },
     "2": {
-      "description": "Степень 2: легкие повреждения остекления до 10%, рам, штукатурки",
-      "open_surface": {"K_v_min": 15.0, "K_v_max": 30.0, "k_v_min": 1.5, "k_v_max": 3.0},
-      "soil_covered_1_5m": {"K_v_min": 8.0, "K_v_max": 12.0, "k_v_min": 0.8, "k_v_max": 1.2}
+      "open": {"formula_10_above_t": 10, "k_v": [10, 30], "K_v": [60, 100]},
+      "buried": {"formula_10_above_t": 20, "k_v": [5, 12], "K_v": [50, 50]}
     },
     "3": {
-      "description": "Степень 3: повреждение перегородок, рам, трещины в стенах",
-      "open_surface": {"K_v_min": 7.0, "K_v_max": 10.0, "k_v_min": 0.7, "k_v_max": 1.0},
-      "soil_covered_1_5m": {"K_v_min": 4.0, "K_v_max": 6.0, "k_v_min": 0.4, "k_v_max": 0.6}
+      "open": {"formula_10_above_t": 10, "k_v": [5, 8], "K_v": [30, 50]},
+      "buried": {"formula_10_above_t": null, "k_v": [2, 4]}
     },
     "4": {
-      "description": "Степень 4: сильные трещины, частичное обрушение",
-      "open_surface": {"K_v_min": 3.5, "K_v_max": 6.0}
+      "open": {"formula_10_above_t": null, "k_v": [2, 4]},
+      "buried": {"formula_10_above_t": null, "k_v": [1, 2]}
     },
     "5": {
-      "description": "Степень 5: разрушение зданий",
-      "open_surface": {"K_v_min": 1.5, "K_v_max": 3.0}
+      "open": {"formula_10_above_t": null, "k_v": [1.5, 2]},
+      "buried": {"formula_10_above_t": null, "k_v": [0.5, 1]}
     }
   },
-  "detonation_coefficients_kd": {
-    "DEFAULT_STACK_WIDTH_B_M": 1.6,
-    "profiles": {
-      "UNBERMED_TO_UNBERMED_HIGH_SENS": 2.25,
-      "UNBERMED_TO_UNBERMED_STANDARD": 1.6,
-      "UNBERMED_TO_BERMED": 1.0,
-      "BERMED_TO_UNBERMED": 1.2,
-      "BERMED_TO_BERMED_STANDARD": 0.8,
-      "BERMED_TO_BERMED_GRANULAR": 0.6,
-      "BURIED_TO_BURIED": 0.4
+  "table_3_note": "Таблица 3 Приложения 11 (Documentation/Приложения_к_приказу_343.pdf, стр. 37-39): допустимые расстояния по действию воздушной волны от складов ВМ до объектов. Принимается по вместимости наибольшего хранилища. Расчет — по формулам строки (sqrt — k*sqrt(Q); cbrt — k*Q^(1/3)); table_m — значения таблицы для сверки. Строка «объекты 3, открыто расположенные» в источнике не заполнена. Табличные значения округлены: при 500-2000 кг в шести ячейках они меньше формулы на 5-12 % (например, «объекты 2, открыто, 500 кг»: 100 м против 5*sqrt(500) = 112 м), в остальных ячейках расхождение не более 3 %; в расчете принимается формула (в запас).",
+  "table_3_uvv": {
+    "masses_kg": [500, 1000, 2000, 4000, 10000, 15000, 25000, 50000, 75000, 100000, 200000, 250000],
+    "categories": {
+      "1": {
+        "description": "Отдельные здания и сооружения, авто- и железные дороги с небольшим движением, особо прочные по сопротивляемости действию УВВ сооружения",
+        "buried": {"formulas": [{"max_kg": null, "type": "sqrt", "k": 1.0}], "table_m": [20, 30, 40, 65, 100, 120, 160, 220, 270, 320, 450, 500]},
+        "open": {"formulas": [{"max_kg": null, "type": "sqrt", "k": 2.0}], "table_m": [45, 60, 90, 130, 200, 240, 320, 450, 550, 630, 900, 1000]}
+      },
+      "2": {
+        "description": "Населенные пункты, авто- и железнодорожные магистрали, крупные водные пути, заводы, фабрики, склады взрывчатых и огнеопасных материалов, сооружения государственного значения",
+        "buried": {"formulas": [{"max_kg": null, "type": "sqrt", "k": 2.0}], "table_m": [45, 60, 90, 130, 200, 240, 320, 450, 550, 630, 900, 1000]},
+        "open": {"formulas": [{"max_kg": 10000, "type": "sqrt", "k": 5.0}, {"max_kg": null, "type": "cbrt", "k": 30.0}], "table_m": [100, 160, 220, 320, 500, 740, 880, 1100, 1250, 1400, 1750, 1900]}
+      },
+      "3": {
+        "description": "Объекты, для которых допустимы только случайные повреждения застекления",
+        "buried": {"formulas": [{"max_kg": 10000, "type": "sqrt", "k": 10.0}, {"max_kg": null, "type": "cbrt", "k": 60.0}], "table_m": [220, 320, 450, 630, 1000, 1500, 1750, 2200, 2500, 2800, 3500, 3800]},
+        "open": null
+      }
     }
   },
-  "tabular_lookup_grids": []
+  "table_4_kd": {
+    "an_based_open": {"an_based_open": 0.8, "an_based_buried": 0.5, "nitroester_40_plus_open": 1.1, "nitroester_40_plus_buried": 0.8, "tnt_open": 1.3, "tnt_buried": 1.0, "detonators_open": 0.8, "detonators_buried": 0.5},
+    "an_based_buried": {"an_based_open": 0.5, "an_based_buried": 0.3, "nitroester_40_plus_open": 0.8, "nitroester_40_plus_buried": 0.5, "tnt_open": 1.0, "tnt_buried": 0.6, "detonators_open": 0.5, "detonators_buried": 0.3},
+    "nitroester_40_plus_open": {"an_based_open": 1.6, "an_based_buried": 1.0, "nitroester_40_plus_open": 2.3, "nitroester_40_plus_buried": 1.6, "tnt_open": 2.5, "tnt_buried": 2.0, "detonators_open": 1.6, "detonators_buried": 1.0},
+    "nitroester_40_plus_buried": {"an_based_open": 1.0, "an_based_buried": 0.6, "nitroester_40_plus_open": 1.6, "nitroester_40_plus_buried": 1.0, "tnt_open": 2.0, "tnt_buried": 1.3, "detonators_open": 1.0, "detonators_buried": 0.6},
+    "tnt_open": {"an_based_open": 1.3, "an_based_buried": 1.0, "nitroester_40_plus_open": 1.6, "nitroester_40_plus_buried": 1.3, "tnt_open": 1.9, "tnt_buried": 1.4, "detonators_open": 1.3, "detonators_buried": 1.0},
+    "tnt_buried": {"an_based_open": 1.0, "an_based_buried": 0.6, "nitroester_40_plus_open": 1.3, "nitroester_40_plus_buried": 0.9, "tnt_open": 1.4, "tnt_buried": 0.8, "detonators_open": 1.0, "detonators_buried": 0.7},
+    "detonators_open": {"an_based_open": 0.4, "an_based_buried": 0.25, "nitroester_40_plus_open": 0.75, "nitroester_40_plus_buried": 0.5, "tnt_open": 0.7, "tnt_buried": 0.6, "detonators_open": 0.4, "detonators_buried": 0.25},
+    "detonators_buried": {"an_based_open": 0.25, "an_based_buried": 0.2, "nitroester_40_plus_open": 0.5, "nitroester_40_plus_buried": 0.4, "tnt_open": 0.6, "tnt_buried": 0.4, "detonators_open": 0.25, "detonators_buried": 0.2}
+  },
+  "table_5_rd_b_1_6_m": [
+    {"active": "an_based_open", "passive": "an_based_open", "k_d": 0.8, "distances_m": {"10": 20, "25": 27, "60": 36, "120": 45, "240": 56, "420": 68}},
+    {"active": "an_based_open", "passive": "an_based_buried", "k_d": 0.5, "distances_m": {"10": 12, "25": 17, "60": 22, "120": 28, "240": 35, "420": 43}},
+    {"active": "an_based_buried", "passive": "an_based_open", "k_d": 0.5, "distances_m": {"10": 12, "25": 17, "60": 22, "120": 28, "240": 35, "420": 43}},
+    {"active": "an_based_buried", "passive": "an_based_buried", "k_d": 0.3, "distances_m": {"10": 7, "25": 10, "60": 14, "120": 17, "240": 21, "420": 26}},
+    {"active": "an_based_open", "passive": "tnt_open", "k_d": 1.3, "distances_m": {"10": 32, "25": 43, "60": 58, "120": 73, "240": 91, "420": 110}},
+    {"active": "an_based_open", "passive": "tnt_buried", "k_d": 1.0, "distances_m": {"10": 25, "25": 33, "60": 44, "120": 56, "240": 70, "420": 85}},
+    {"active": "an_based_buried", "passive": "tnt_open", "k_d": 1.0, "distances_m": {"10": 25, "25": 33, "60": 44, "120": 56, "240": 70, "420": 85}},
+    {"active": "an_based_buried", "passive": "tnt_buried", "k_d": 0.6, "distances_m": {"10": 15, "25": 20, "60": 27, "120": 34, "240": 42, "420": 51}},
+    {"active": "tnt_open", "passive": "an_based_open", "k_d": 1.3, "distances_m": {"10": 32, "25": 43, "60": 58, "120": 73, "240": 91, "420": 110}},
+    {"active": "tnt_open", "passive": "an_based_buried", "k_d": 1.0, "distances_m": {"10": 25, "25": 33, "60": 44, "120": 56, "240": 70, "420": 85}},
+    {"active": "tnt_buried", "passive": "an_based_open", "k_d": 1.0, "distances_m": {"10": 25, "25": 33, "60": 44, "120": 56, "240": 70, "420": 85}},
+    {"active": "tnt_buried", "passive": "an_based_buried", "k_d": 0.6, "distances_m": {"10": 15, "25": 20, "60": 27, "120": 34, "240": 42, "420": 51}},
+    {"active": "tnt_open", "passive": "tnt_open", "k_d": 1.9, "distances_m": {"10": 46, "25": 63, "60": 84, "120": 106, "240": 133, "420": 160}},
+    {"active": "tnt_open", "passive": "tnt_buried", "k_d": 1.4, "distances_m": {"10": 34, "25": 46, "60": 62, "120": 78, "240": 98, "420": 118}},
+    {"active": "tnt_buried", "passive": "tnt_open", "k_d": 1.4, "distances_m": {"10": 34, "25": 46, "60": 62, "120": 78, "240": 98, "420": 118}},
+    {"active": "tnt_buried", "passive": "tnt_buried", "k_d": 0.8, "distances_m": {"10": 20, "25": 27, "60": 36, "120": 45, "240": 56, "420": 68}}
+  ]
 }

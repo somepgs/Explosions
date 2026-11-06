@@ -1,7 +1,8 @@
 """Модели хранилищ, ПРП, передвижных складов и входа проекта."""
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from explosions_core.domain.base import InputModel
 from explosions_core.domain.distances import ExternalProtectedObject
 from explosions_core.domain.enums import (
     LocationType,
@@ -13,7 +14,7 @@ from explosions_core.domain.enums import (
 from explosions_core.domain.explosives import ExplosiveItem
 
 
-class InternalLayoutConfig(BaseModel):
+class InternalLayoutConfig(InputModel):
     storage_method: StorageMethod
     packaging: PackagingType
     unsealed_bc_or_black_powder: bool = False
@@ -26,12 +27,12 @@ class InternalLayoutConfig(BaseModel):
     tiers_per_shelf: int | None = Field(default=None, ge=0)
 
 
-class BermParams(BaseModel):
+class BermParams(InputModel):
     height_m: float | None = Field(default=None, ge=0)
     top_width_m: float | None = Field(default=None, ge=0)
 
 
-class StorageBuilding(BaseModel):
+class StorageBuilding(InputModel):
     name: str
     storage_id: str | None = None
     category: WarehouseCategory
@@ -48,23 +49,23 @@ class StorageBuilding(BaseModel):
     width_m: float | None = Field(default=None, gt=0)
 
 
-class UnloadingPlatformConfig(BaseModel):
+class UnloadingPlatformConfig(InputModel):
+    fence_height_m: float | None = Field(default=None, ge=0)
     loading_point_to_fence_m: float | None = Field(default=None, ge=0)
     switch_distance_m: float | None = Field(default=None, ge=0)
     guardhouse_distance_m: float | None = Field(default=None, ge=0)
 
 
-class MobileWarehouseConfig(BaseModel):
+class MobileWarehouseConfig(InputModel):
     vehicle_name: str
     rated_payload_kg: float = Field(gt=0)
     payload_kg: float = Field(ge=0)
+    is_specialized_vehicle: bool = False
     powder_separation_m: float | None = Field(default=None, ge=0)
-    distance_to_blasting_site_m: float | None = Field(default=None, ge=0)
-    distance_to_settlement_m: float | None = Field(default=None, ge=0)
     items: list[ExplosiveItem] = Field(default_factory=list)
 
 
-class WarehouseProjectInput(BaseModel):
+class WarehouseProjectInput(InputModel):
     name: str
     storages: list[StorageBuilding] = Field(default_factory=list)
     forbidden_zone_width_m: float | None = Field(default=None, ge=0)

@@ -65,9 +65,15 @@ def test_report_contains_at_least_seven_tables(tmp_path: Path) -> None:
 
 def test_report_contains_exact_numeric_substitutions(tmp_path: Path) -> None:
     text = _all_text(docx.Document(_export(tmp_path)))
-    assert "80.00" in text
-    assert "15.53" in text
-    assert "7.34" in text
+    # оба хранилища обвалованы (п. 16 Прил. 11): K_д = 0,3 (таблица 4), формула (19) при b = 1,6 м
+    expected_r_d = 0.3 * 16000.0 ** (1.0 / 3.0) * 1.6 ** 0.25
+    assert f"{expected_r_d:.2f}" == "8.50"
+    assert "8.50" in text
+    assert "K_д = 0.30" in text or "0.30" in text
+    assert "19.23" in text
+    assert "16.00" in text
+    assert "9.43" in text
+    assert "СО 153-34.21.122-2003" in text
 
 
 def test_report_cites_required_normative_references(tmp_path: Path) -> None:
@@ -120,7 +126,7 @@ def test_normal_report_has_no_red_violation_text(tmp_path: Path) -> None:
 
 
 def test_violation_is_marked_red_bold(tmp_path: Path) -> None:
-    document = docx.Document(_export(tmp_path, clear_distance_m=35.0))
+    document = docx.Document(_export(tmp_path, clear_distance_m=5.0))
     red_texts = _red_bold_texts(document)
     assert any("DETONATION_TRANSFER_DISTANCE" in text for text in red_texts)
     assert any("п. 15" in text or "Приложения 11" in text for text in _all_text(document).split("\n") if text)

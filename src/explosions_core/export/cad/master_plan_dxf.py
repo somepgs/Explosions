@@ -10,7 +10,7 @@ from explosions_core.calc.geometry import (
     storage_key,
     storages_bounds,
 )
-from explosions_core.calc.safe_distances import calculate_tnt_equivalent_mass
+from explosions_core.calc.safe_distances import calculate_explosive_mass
 from explosions_core.domain import (
     BermDesignResult,
     DetonationPairResult,
@@ -89,11 +89,11 @@ def _draw_storages(msp, storages: list[StorageBuilding], berm_results: dict[str,
         if berm is not None:
             _draw_storage_berm(msp, (x1, y1, x2, y2), berm)
         groups = ", ".join(sorted({item.group.value for item in storage.items})) or "—"
-        tnt_t = calculate_tnt_equivalent_mass(storage.items, skip_missing=True) / 1000.0
+        mass_t = calculate_explosive_mass(storage.items) / 1000.0
         center_x, _ = storage_center(storage)
         add_text(
             msp,
-            f"{storage.name}: Q_тэ = {tnt_t:.2f} т, группы: {groups}",
+            f"{storage.name}: Q = {mass_t:.2f} т ВВ, группы: {groups}",
             (center_x, y2 + LABEL_OFFSET_M),
             LAYER_DIMENSIONS,
         )

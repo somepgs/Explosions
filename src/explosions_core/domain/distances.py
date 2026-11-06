@@ -2,11 +2,13 @@
 
 from pydantic import BaseModel, Field
 
+from explosions_core.domain.base import InputModel
+from explosions_core.domain.enums import ChargePlacementType, UVVMethod
 from explosions_core.domain.results import NormativeViolation
 from explosions_core.norms.constants_rk343 import MAX_TOPOGRAPHY_REDUCTION_COEFF, MIN_TOPOGRAPHY_REDUCTION_COEFF
 
 
-class ExternalProtectedObject(BaseModel):
+class ExternalProtectedObject(InputModel):
     object_id: str
     name: str
     allowed_damage_degree: int = Field(ge=1, le=5)
@@ -18,14 +20,23 @@ class ExternalProtectedObject(BaseModel):
         le=MAX_TOPOGRAPHY_REDUCTION_COEFF,
     )
     bearing_deg: float | None = Field(default=None, ge=0, lt=360)
+    table3_object_category: int | None = Field(
+        default=None,
+        ge=1,
+        le=3,
+        description="категория объекта по таблице 3 Приложения 11 (нужна для метода table_3)",
+    )
 
 
 class UVVDistanceResult(BaseModel):
     storage_id: str
     object_id: str
-    equivalent_tnt_mass_kg: float
+    method: UVVMethod = UVVMethod.TABLE_2_FORMULAS
+    explosive_mass_kg: float
+    placement: ChargePlacementType
     formula_used: str
-    applied_coeff_kv: float
+    kv_range: tuple[float, float] | None = None
+    applied_coeff: float
     required_distance_m: float
     actual_distance_m: float
     safety_margin_m: float
@@ -36,11 +47,16 @@ class UVVDistanceResult(BaseModel):
 class DetonationPairResult(BaseModel):
     storage_i_id: str
     storage_j_id: str
-    q_i_tnt_kg: float
-    q_j_tnt_kg: float
+    q_i_kg: float
+    q_j_kg: float
+    k_d_i_to_j: float
+    k_d_j_to_i: float
+    b_i_m: float
+    b_j_m: float
     r_d_i_to_j_m: float
     r_d_j_to_i_m: float
     governing_required_r_d_m: float
     actual_clear_distance_m: float
+    axial_min_distance_m: float | None = None
     is_safe: bool
     violations: list[NormativeViolation] = Field(default_factory=list)

@@ -1,6 +1,11 @@
-"""Модуль 2 и часть Модуля 4: внутренняя планировка, периметр, ПРП, кратковременные и передвижные склады."""
+"""Модуль 2 и часть Модуля 4: внутренняя планировка (п. 579–580), генплан склада (п. 16, 590, 592, 593, 618, 621),
+ПРП (п. 48) и совместная перевозка ВВ и СИ (п. 74).
+
+Пункты 62–66 (кратковременные расходные и передвижные склады) в редакции от 02.10.2025 исключены и не проверяются.
+"""
 
 from explosions_core.domain import (
+    CompatibilityGroup,
     ExplosiveItem,
     NormativeViolation,
     PackagingType,
@@ -15,10 +20,6 @@ from explosions_core.norms.constants_rk343 import (
     MAX_PRP_GUARDHOUSE_DIST_M,
     MAX_RACK_SHELF_HEIGHT_OTHER_M,
     MAX_RACK_SHELF_HEIGHT_UNSEALED_BC_M,
-    MAX_SHORT_TERM_SINGLE_STORAGE_SI_PCS,
-    MAX_SHORT_TERM_SINGLE_STORAGE_VM_KG,
-    MAX_SHORT_TERM_TOTAL_SI_PCS,
-    MAX_SHORT_TERM_TOTAL_VM_KG,
     MAX_STACK_HEIGHT_PALLET_M,
     MAX_STACK_HEIGHT_STANDARD_M,
     MAX_TIERS_OTHER,
@@ -26,26 +27,35 @@ from explosions_core.norms.constants_rk343 import (
     MIN_AISLE_WIDTH_RACK_M,
     MIN_AISLE_WIDTH_STACK_M,
     MIN_DIST_FENCE_TO_GUARDHOUSE_M,
+    MIN_DIST_FENCE_TO_GUARDHOUSE_SHORT_TERM_M,
     MIN_DIST_FENCE_TO_STORAGE_M,
+    MIN_DIST_FENCE_TO_STORAGE_SHORT_TERM_M,
     MIN_DIST_FENCE_TO_TARE_STORAGE_M,
-    MIN_FENCE_HEIGHT_M,
+    MIN_FENCE_HEIGHT_PERMANENT_M,
+    MIN_FENCE_HEIGHT_SHORT_TERM_M,
+    MIN_FENCE_HEIGHT_TEMPORARY_M,
     MIN_FLOOR_DECK_HEIGHT_M,
     MIN_FORBIDDEN_ZONE_WIDTH_M,
     MIN_MOBILE_POWDER_SEPARATION_M,
-    MIN_MOBILE_SAFE_STANDOFF_M,
     MIN_OPEN_FIRE_BAN_RADIUS_M,
     MIN_PRP_FENCE_DIST_M,
+    MIN_PRP_FENCE_HEIGHT_M,
     MIN_PRP_SWITCH_DIST_M,
     MIN_WALL_CLEARANCE_M,
 )
 from explosions_core.norms.references import (
+    CLAUSE_FENCE_PERMANENT,
+    CLAUSE_FORBIDDEN_ZONE,
+    CLAUSE_GUARDHOUSE,
     CLAUSE_MOBILE_PAYLOAD,
-    CLAUSE_MOBILE_STANDOFF,
+    CLAUSE_MOBILE_POWDER,
     CLAUSE_OPEN_FIRE,
-    CLAUSE_PERIMETER,
     CLAUSE_PRP,
     CLAUSE_RACK,
     CLAUSE_SHORT_TERM,
+    CLAUSE_TARE,
+    CLAUSE_TEMPORARY_AS_PERMANENT,
+    CLAUSE_TEMPORARY_FENCE,
 )
 from explosions_core.norms.references import CLAUSE_STACK as CLAUSE_LAYOUT
 from explosions_core.validators.compatibility import validate_compatibility
@@ -173,53 +183,96 @@ def validate_internal_layout(storage: StorageBuilding) -> ValidationResult:
     return ValidationResult(violations=violations)
 
 
+_DURATION_PRIORITY = (WarehouseDuration.PERMANENT, WarehouseDuration.TEMPORARY, WarehouseDuration.SHORT_TERM)
+
+
+def governing_warehouse_duration(project: WarehouseProjectInput) -> WarehouseDuration:
+    """Тип склада для проверки генплана: наиболее строгий из сроков эксплуатации хранилищ (по умолчанию — постоянный)."""
+    durations = {storage.duration for storage in project.storages}
+    for duration in _DURATION_PRIORITY:
+        if duration in durations:
+            return duration
+    return WarehouseDuration.PERMANENT
+
+
 def validate_perimeter(project: WarehouseProjectInput) -> ValidationResult:
+    """Генплан склада по типу: постоянный (п. 590, 592, 593), временный (п. 618), кратковременный (п. 621); огонь — п. 16."""
     violations: list[NormativeViolation] = []
-    _check_min(
-        violations,
-        code="PERIMETER_FORBIDDEN_ZONE_WIDTH",
-        clause=CLAUSE_PERIMETER,
-        title="Ширина запретной зоны от ограды склада",
-        actual=project.forbidden_zone_width_m,
-        minimum=MIN_FORBIDDEN_ZONE_WIDTH_M,
-    )
-    _check_min(
-        violations,
-        code="PERIMETER_FENCE_HEIGHT",
-        clause=CLAUSE_PERIMETER,
-        title="Высота ограждения склада и колючей проволоки",
-        actual=project.fence_height_m,
-        minimum=MIN_FENCE_HEIGHT_M,
-    )
-    _check_min(
-        violations,
-        code="PERIMETER_FENCE_TO_STORAGE",
-        clause=CLAUSE_PERIMETER,
-        title="Расстояние от ограды до ближайшего хранилища ВМ",
-        actual=project.fence_to_nearest_storage_m,
-        minimum=MIN_DIST_FENCE_TO_STORAGE_M,
-    )
-    _check_min(
-        violations,
-        code="PERIMETER_FENCE_TO_GUARDHOUSE",
-        clause=CLAUSE_PERIMETER,
-        title="Расстояние от ограды до караульного помещения",
-        actual=project.fence_to_guardhouse_m,
-        minimum=MIN_DIST_FENCE_TO_GUARDHOUSE_M,
-    )
-    _check_min(
-        violations,
-        code="PERIMETER_FENCE_TO_TARE_STORAGE",
-        clause=CLAUSE_PERIMETER,
-        title="Расстояние от ограды до склада тары",
-        actual=project.fence_to_tare_storage_m,
-        minimum=MIN_DIST_FENCE_TO_TARE_STORAGE_M,
-    )
+    duration = governing_warehouse_duration(project)
+    if duration == WarehouseDuration.SHORT_TERM:
+        _check_min(
+            violations,
+            code="PERIMETER_FENCE_HEIGHT",
+            clause=CLAUSE_SHORT_TERM,
+            title="Высота ограды кратковременного склада",
+            actual=project.fence_height_m,
+            minimum=MIN_FENCE_HEIGHT_SHORT_TERM_M,
+        )
+        _check_min(
+            violations,
+            code="PERIMETER_FENCE_TO_STORAGE",
+            clause=CLAUSE_SHORT_TERM,
+            title="Расстояние от ограды до ближайшей стены хранилища",
+            actual=project.fence_to_nearest_storage_m,
+            minimum=MIN_DIST_FENCE_TO_STORAGE_SHORT_TERM_M,
+        )
+        _check_min(
+            violations,
+            code="PERIMETER_FENCE_TO_GUARDHOUSE",
+            clause=CLAUSE_SHORT_TERM,
+            title="Расстояние от ограды до караульного помещения",
+            actual=project.fence_to_guardhouse_m,
+            minimum=MIN_DIST_FENCE_TO_GUARDHOUSE_SHORT_TERM_M,
+        )
+    else:
+        is_temporary = duration == WarehouseDuration.TEMPORARY
+        general_clause = (lambda clause: CLAUSE_TEMPORARY_AS_PERMANENT if is_temporary else clause)
+        _check_min(
+            violations,
+            code="PERIMETER_FORBIDDEN_ZONE_WIDTH",
+            clause=general_clause(CLAUSE_FORBIDDEN_ZONE),
+            title="Ширина запретной зоны от ограды склада",
+            actual=project.forbidden_zone_width_m,
+            minimum=MIN_FORBIDDEN_ZONE_WIDTH_M,
+        )
+        _check_min(
+            violations,
+            code="PERIMETER_FENCE_HEIGHT",
+            clause=CLAUSE_TEMPORARY_FENCE if is_temporary else CLAUSE_FENCE_PERMANENT,
+            title="Высота ограды склада",
+            actual=project.fence_height_m,
+            minimum=MIN_FENCE_HEIGHT_TEMPORARY_M if is_temporary else MIN_FENCE_HEIGHT_PERMANENT_M,
+        )
+        _check_min(
+            violations,
+            code="PERIMETER_FENCE_TO_STORAGE",
+            clause=general_clause(CLAUSE_FENCE_PERMANENT),
+            title="Расстояние от ограды до ближайшего хранилища",
+            actual=project.fence_to_nearest_storage_m,
+            minimum=MIN_DIST_FENCE_TO_STORAGE_M,
+        )
+        zone_width = max(MIN_FORBIDDEN_ZONE_WIDTH_M, project.forbidden_zone_width_m or 0.0)
+        _check_min(
+            violations,
+            code="PERIMETER_FENCE_TO_GUARDHOUSE",
+            clause=general_clause(CLAUSE_GUARDHOUSE),
+            title="Караульное помещение размещается за запретной зоной: расстояние от ограды",
+            actual=project.fence_to_guardhouse_m,
+            minimum=max(MIN_DIST_FENCE_TO_GUARDHOUSE_M, zone_width),
+        )
+        _check_min(
+            violations,
+            code="PERIMETER_FENCE_TO_TARE_STORAGE",
+            clause=general_clause(CLAUSE_TARE),
+            title="Расстояние от ограды до сарая (навеса) для тары",
+            actual=project.fence_to_tare_storage_m,
+            minimum=MIN_DIST_FENCE_TO_TARE_STORAGE_M,
+        )
     _check_min(
         violations,
         code="PERIMETER_OPEN_FIRE_BAN_RADIUS",
         clause=CLAUSE_OPEN_FIRE,
-        title="Радиус зоны запрета открытого огня и курения вокруг ВМ",
+        title="Расстояние от места нахождения ВМ, ближе которого запрещены открытый огонь и курение",
         actual=project.open_fire_ban_radius_m,
         minimum=MIN_OPEN_FIRE_BAN_RADIUS_M,
     )
@@ -231,6 +284,14 @@ def validate_prp(project: WarehouseProjectInput) -> ValidationResult:
     if platform is None:
         return ValidationResult()
     violations: list[NormativeViolation] = []
+    _check_min(
+        violations,
+        code="PRP_FENCE_HEIGHT",
+        clause=CLAUSE_PRP,
+        title="Высота ограды ПРП",
+        actual=platform.fence_height_m,
+        minimum=MIN_PRP_FENCE_HEIGHT_M,
+    )
     _check_min(
         violations,
         code="PRP_FENCE_DISTANCE",
@@ -258,56 +319,6 @@ def validate_prp(project: WarehouseProjectInput) -> ValidationResult:
     return ValidationResult(violations=violations)
 
 
-def validate_short_term_limits(project: WarehouseProjectInput) -> ValidationResult:
-    violations: list[NormativeViolation] = []
-    total_mass_kg = 0.0
-    total_si_pcs = 0
-    for storage in project.storages:
-        if storage.duration != WarehouseDuration.SHORT_TERM:
-            continue
-        mass_kg = sum((item.mass_kg for item in storage.items if not item.is_initiating_device), 0.0)
-        si_pcs = sum(item.si_count for item in storage.items)
-        total_mass_kg += mass_kg
-        total_si_pcs += si_pcs
-        _check_max(
-            violations,
-            code="SHORT_TERM_SINGLE_STORAGE_VM",
-            clause=CLAUSE_SHORT_TERM,
-            title=f"Хранилище '{storage.name}': масса ВМ в одном хранилище",
-            actual=mass_kg,
-            maximum=MAX_SHORT_TERM_SINGLE_STORAGE_VM_KG,
-            unit="кг",
-        )
-        _check_max(
-            violations,
-            code="SHORT_TERM_SINGLE_STORAGE_SI",
-            clause=CLAUSE_SHORT_TERM,
-            title=f"Хранилище '{storage.name}': количество СИ в одном хранилище",
-            actual=si_pcs,
-            maximum=MAX_SHORT_TERM_SINGLE_STORAGE_SI_PCS,
-            unit="шт.",
-        )
-    _check_max(
-        violations,
-        code="SHORT_TERM_TOTAL_VM",
-        clause=CLAUSE_SHORT_TERM,
-        title="Суммарная масса ВМ кратковременного расходного склада",
-        actual=total_mass_kg,
-        maximum=MAX_SHORT_TERM_TOTAL_VM_KG,
-        unit="кг",
-    )
-    _check_max(
-        violations,
-        code="SHORT_TERM_TOTAL_SI",
-        clause=CLAUSE_SHORT_TERM,
-        title="Суммарное количество СИ кратковременного расходного склада",
-        actual=total_si_pcs,
-        maximum=MAX_SHORT_TERM_TOTAL_SI_PCS,
-        unit="шт.",
-    )
-    return ValidationResult(violations=violations)
-
-
 def _is_powder(item: ExplosiveItem) -> bool:
     return item.is_black_powder or item.is_smokeless_powder
 
@@ -317,43 +328,42 @@ def validate_mobile_warehouse(project: WarehouseProjectInput) -> ValidationResul
     if mobile is None:
         return ValidationResult()
     violations: list[NormativeViolation] = []
-    _check_max(
-        violations,
-        code="MOBILE_PAYLOAD_OVERLOAD",
-        clause=CLAUSE_MOBILE_PAYLOAD,
-        title=f"Передвижной склад '{mobile.vehicle_name}': загрузка ТС",
-        actual=mobile.payload_kg,
-        maximum=mobile.rated_payload_kg * MAX_MOBILE_PAYLOAD_RATIO,
-        unit="кг",
-    )
+    has_si = any(item.is_initiating_device for item in mobile.items)
+    has_vv = any(not item.is_initiating_device for item in mobile.items)
+    joint_transport = (has_si and has_vv) or not mobile.items
+    has_b_or_f = any(item.group in (CompatibilityGroup.B, CompatibilityGroup.F) for item in mobile.items)
+    full_load_allowed = mobile.is_specialized_vehicle and bool(mobile.items) and not has_b_or_f
+    if joint_transport and not full_load_allowed:
+        _check_payload(violations, mobile.vehicle_name, mobile.payload_kg, mobile.rated_payload_kg)
     has_powder = any(_is_powder(item) for item in mobile.items)
     has_other = any(not _is_powder(item) for item in mobile.items)
     if has_powder and has_other:
         _check_min(
             violations,
             code="MOBILE_POWDER_SEPARATION",
-            clause=CLAUSE_MOBILE_PAYLOAD,
-            title=f"Передвижной склад '{mobile.vehicle_name}': расстояние между порохами/перфораторными зарядами и прочими ВМ",
+            clause=CLAUSE_MOBILE_POWDER,
+            title=f"ТС '{mobile.vehicle_name}': расстояние между порохами/перфораторными зарядами и прочими ВМ",
             actual=mobile.powder_separation_m,
             minimum=MIN_MOBILE_POWDER_SEPARATION_M,
         )
-    _check_min(
-        violations,
-        code="MOBILE_BLASTING_STANDOFF",
-        clause=CLAUSE_MOBILE_STANDOFF,
-        title=f"Передвижной склад '{mobile.vehicle_name}': удаление от места взрывных работ",
-        actual=mobile.distance_to_blasting_site_m,
-        minimum=MIN_MOBILE_SAFE_STANDOFF_M,
-    )
-    _check_min(
-        violations,
-        code="MOBILE_SETTLEMENT_STANDOFF",
-        clause=CLAUSE_MOBILE_STANDOFF,
-        title=f"Передвижной склад '{mobile.vehicle_name}': удаление от населенных пунктов",
-        actual=mobile.distance_to_settlement_m,
-        minimum=MIN_MOBILE_SAFE_STANDOFF_M,
-    )
     return ValidationResult(violations=violations)
+
+
+def _check_payload(violations: list[NormativeViolation], vehicle: str, payload_kg: float, rated_kg: float) -> None:
+    """п. 74, подпункт 1: при совместной перевозке ВВ и СИ загрузка не более 2/3 грузоподъемности.
+
+    Если состав груза не задан, проверка выполняется в запас надежности. На специализированных автомобилях
+    совместная доставка ВМ, кроме групп B и F, допускается до полной грузоподъемности (п. 74, последний абзац).
+    """
+    _check_max(
+        violations,
+        code="MOBILE_PAYLOAD_OVERLOAD",
+        clause=CLAUSE_MOBILE_PAYLOAD,
+        title=f"ТС '{vehicle}': загрузка при совместной перевозке ВВ и СИ",
+        actual=payload_kg,
+        maximum=rated_kg * MAX_MOBILE_PAYLOAD_RATIO,
+        unit="кг",
+    )
 
 
 def validate_project(project: WarehouseProjectInput) -> ValidationResult:
@@ -361,7 +371,6 @@ def validate_project(project: WarehouseProjectInput) -> ValidationResult:
     results.extend(validate_internal_layout(storage) for storage in project.storages)
     results.append(validate_perimeter(project))
     results.append(validate_prp(project))
-    results.append(validate_short_term_limits(project))
     results.append(validate_mobile_warehouse(project))
     violations = [violation for result in results for violation in result.violations]
     return ValidationResult(violations=violations)

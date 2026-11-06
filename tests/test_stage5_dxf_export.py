@@ -27,6 +27,7 @@ from explosions_core.domain import (
     BermDesignInput,
     BermSoilMaterial,
     CompatibilityGroup,
+    DetonationMaterialClass,
     ExplosiveItem,
     ExternalProtectedObject,
     LightningArresterMast,
@@ -67,7 +68,7 @@ def _berm_input() -> BermDesignInput:
     return BermDesignInput(
         storage_length_m=20.0,
         storage_width_m=10.0,
-        eaves_height_m=3.5,
+        load_top_height_m=2.5,
         soil_material=BermSoilMaterial.PLASTIC_CLAY_LOAM,
         natural_slope_angle_deg=45.0,
     )
@@ -115,8 +116,9 @@ def _storage(name: str, storage_id: str, x_m: float, y_m: float, items: list[Exp
 
 
 def _project_input() -> WarehouseProjectInput:
-    items_1 = [ExplosiveItem(name="ВВ", group=CompatibilityGroup.B, mass_kg=16000.0, tnt_equivalent_coeff=1.0)]
-    items_2 = [ExplosiveItem(name="ВВ", group=CompatibilityGroup.B, mass_kg=5000.0, tnt_equivalent_coeff=1.0)]
+    an_based = DetonationMaterialClass.AN_BASED
+    items_1 = [ExplosiveItem(name="ВВ", group=CompatibilityGroup.D, mass_kg=16000.0, detonation_class=an_based)]
+    items_2 = [ExplosiveItem(name="ВВ", group=CompatibilityGroup.D, mass_kg=5000.0, detonation_class=an_based)]
     return WarehouseProjectInput(
         name="Склад",
         storages=[

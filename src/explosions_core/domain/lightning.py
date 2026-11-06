@@ -2,12 +2,18 @@
 
 from pydantic import BaseModel, Field
 
-from explosions_core.domain.enums import LightningZoneType
+from explosions_core.domain.base import InputModel
+from explosions_core.domain.enums import (
+    LightningMethod,
+    LightningProtectionLevel,
+    LightningReliability,
+    LightningZoneType,
+)
 from explosions_core.domain.results import NormativeViolation
 from explosions_core.norms.constants_rk343 import MAX_ROD_ARRESTER_HEIGHT_M
 
 
-class LightningArresterMast(BaseModel):
+class LightningArresterMast(InputModel):
     mast_id: str
     x_m: float
     y_m: float
@@ -22,7 +28,10 @@ class CheckPoint3D(BaseModel):
 
 
 class LightningProtectionResult(BaseModel):
-    zone_type: LightningZoneType
+    method: LightningMethod = LightningMethod.ROLLING_SPHERE_SP_RK
+    protection_level: LightningProtectionLevel = LightningProtectionLevel.LEVEL_I
+    reliability: LightningReliability = LightningReliability.P_0_999
+    zone_type: LightningZoneType | None = None
     mast_results: list[dict] = Field(default_factory=list)
     min_recommended_mast_height_m: float | None = None
     unprotected_points: list[str] = Field(default_factory=list)

@@ -18,7 +18,8 @@ def _berm_input(**overrides) -> BermDesignInput:
     values = {
         "storage_length_m": 20.0,
         "storage_width_m": 10.0,
-        "eaves_height_m": 3.5,
+        "load_top_height_m": 2.5,
+        "crest_width_m": 1.5,
         "soil_material": BermSoilMaterial.PLASTIC_CLAY_LOAM,
         "natural_slope_angle_deg": 45.0,
     }
@@ -74,22 +75,24 @@ def test_berm_lengths_volume_and_footprint():
     assert result.violations == []
 
 
-def test_crest_narrower_than_1_5_m_is_a_violation():
-    result = calculate_berm_design(_berm_input(crest_width_m=1.2))
+def test_crest_narrower_than_1_m_is_a_violation_of_clause_604():
+    assert _codes(calculate_berm_design(_berm_input(crest_width_m=1.0)).violations) == []
+    result = calculate_berm_design(_berm_input(crest_width_m=0.9))
 
     assert "BERM_CREST_WIDTH_TOO_SMALL" in _codes(result.violations)
 
 
-def test_toe_closer_than_1_0_m_to_wall_is_a_violation():
+def test_toe_clearance_is_not_regulated_by_clauses_602_605():
     result = calculate_berm_design(_berm_input(wall_to_inner_toe_clearance_m=0.5))
 
-    assert "BERM_TOE_TOO_CLOSE_TO_WALL" in _codes(result.violations)
+    assert result.violations == []
 
 
-def test_negative_crest_elevation_is_a_violation():
-    result = calculate_berm_design(_berm_input(crest_elevation_above_eaves_m=-0.1))
+def test_crest_less_than_1_5_m_above_load_is_a_violation_of_clause_604():
+    result = calculate_berm_design(_berm_input(crest_elevation_above_load_m=1.4))
 
-    assert "BERM_CREST_ELEVATION_NEGATIVE" in _codes(result.violations)
+    assert "BERM_CREST_TOO_LOW" in _codes(result.violations)
+    assert result.berm_height_m == pytest.approx(3.9)
 
 
 def test_zone_a_reference_values_for_14_5_m_mast_at_6_5_m():
