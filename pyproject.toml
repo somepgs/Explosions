@@ -17,9 +17,15 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+gui = [
+    "PySide6-Essentials>=6.6",
+]
 
 [project.scripts]
 explosions-core = "explosions_core.cli:main"
+
+[project.gui-scripts]
+explosions-gui = "explosions_core.gui.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
