@@ -1,0 +1,235 @@
+{
+  "schema_version": "1",
+  "project": {
+    "name": "Демонстрационный склад ВМ (тестовые данные)",
+    "storages": [
+      {
+        "name": "Хранилище №1",
+        "storage_id": "S1",
+        "category": "basis",
+        "duration": "permanent",
+        "location_type": "surface",
+        "berm": null,
+        "is_bermed": true,
+        "items": [
+          {
+            "name": "Демонстрационное ВВ на основе АС, партия S1",
+            "group": "D",
+            "mass_kg": 16000.0,
+            "si_count": 0,
+            "is_initiating_device": false,
+            "is_black_powder": false,
+            "is_smokeless_powder": false,
+            "tnt_equivalent_coeff": 1.0,
+            "hazard_subclass": "1.1",
+            "detonation_class": "an_based",
+            "is_detonating_cord": false
+          }
+        ],
+        "layout": null,
+        "stack_width_b_m": null,
+        "x_m": 0.0,
+        "y_m": 0.0,
+        "length_m": null,
+        "width_m": null
+      },
+      {
+        "name": "Хранилище №2",
+        "storage_id": "S2",
+        "category": "basis",
+        "duration": "permanent",
+        "location_type": "surface",
+        "berm": null,
+        "is_bermed": true,
+        "items": [
+          {
+            "name": "Демонстрационное ВВ на основе АС, партия S2",
+            "group": "D",
+            "mass_kg": 5000.0,
+            "si_count": 0,
+            "is_initiating_device": false,
+            "is_black_powder": false,
+            "is_smokeless_powder": false,
+            "tnt_equivalent_coeff": 1.0,
+            "hazard_subclass": "1.1",
+            "detonation_class": "an_based",
+            "is_detonating_cord": false
+          }
+        ],
+        "layout": null,
+        "stack_width_b_m": null,
+        "x_m": 117.77,
+        "y_m": 0.0,
+        "length_m": null,
+        "width_m": null
+      }
+    ],
+    "forbidden_zone_width_m": 50.0,
+    "fence_height_m": 2.5,
+    "fence_to_nearest_storage_m": 40.0,
+    "fence_to_guardhouse_m": 50.0,
+    "fence_to_tare_storage_m": 25.0,
+    "open_fire_ban_radius_m": 100.0,
+    "unloading_platform": {
+      "fence_height_m": 2.0,
+      "loading_point_to_fence_m": 15.0,
+      "switch_distance_m": 50.0,
+      "guardhouse_distance_m": 50.0
+    },
+    "mobile_warehouse": null,
+    "external_targets": [
+      {
+        "object_id": "ROAD",
+        "name": "Автомобильная дорога с небольшим движением",
+        "allowed_damage_degree": 4,
+        "custom_kv_override": null,
+        "actual_distance_m": 800.0,
+        "topography_reduction_coeff": 1.0,
+        "bearing_deg": null,
+        "table3_object_category": null
+      },
+      {
+        "object_id": "LEP",
+        "name": "Воздушная линия электропередачи 10 кВ",
+        "allowed_damage_degree": 3,
+        "custom_kv_override": null,
+        "actual_distance_m": 600.0,
+        "topography_reduction_coeff": 1.0,
+        "bearing_deg": null,
+        "table3_object_category": null
+      }
+    ]
+  },
+  "storage_designs": [
+    {
+      "storage_id": "S1",
+      "sizing": {
+        "total_net_explosive_mass_kg": 16000.0,
+        "compatibility_group": "D",
+        "is_black_powder": false,
+        "is_unsealed": false,
+        "storage_method": "stack",
+        "packaging_type": "bag",
+        "is_mechanized": false,
+        "unit_spec": {
+          "net_weight_kg": 25.0,
+          "gross_weight_kg": 26.0,
+          "length_m": 0.55,
+          "width_m": 0.35,
+          "height_m": 0.15,
+          "unit_gap_m": 0.02
+        },
+        "wall_racks_count": 0,
+        "island_rows_count": 4,
+        "cross_aisles_count": 2,
+        "shelf_thickness_m": 0.04,
+        "floor_deck_height_m": 0.1,
+        "wall_clearance_m": 0.2,
+        "shelf_vertical_gap_m": 0.04,
+        "preferred_units_along_single_line": null
+      },
+      "eaves_height_m": 5.0,
+      "ridge_height_m": 6.5,
+      "load_top_height_m": null,
+      "berm": {
+        "crest_elevation_above_load_m": 1.5,
+        "crest_width_m": 1.0,
+        "soil_material": "plastic_clay_loam",
+        "natural_slope_angle_deg": 45.0,
+        "wall_to_inner_toe_clearance_m": 1.5,
+        "has_entrance_screen_berm": true,
+        "entrance_opening_width_m": 4.5,
+        "screen_overlap_each_side_m": 2.0
+      },
+      "lightning": {
+        "method": "rolling_sphere_sp_rk",
+        "protection_level": "I",
+        "reliability": "0.999",
+        "zone_type": null,
+        "masts": [
+          {
+            "mast_id": "M1",
+            "x_m": 9.385,
+            "y_m": 0.0,
+            "height_h_m": 14.5
+          },
+          {
+            "mast_id": "M2",
+            "x_m": -9.385,
+            "y_m": 0.0,
+            "height_h_m": 22.0
+          }
+        ],
+        "vent_height_m": null
+      }
+    },
+    {
+      "storage_id": "S2",
+      "sizing": {
+        "total_net_explosive_mass_kg": 5000.0,
+        "compatibility_group": "D",
+        "is_black_powder": false,
+        "is_unsealed": false,
+        "storage_method": "stack",
+        "packaging_type": "bag",
+        "is_mechanized": false,
+        "unit_spec": {
+          "net_weight_kg": 25.0,
+          "gross_weight_kg": 26.0,
+          "length_m": 0.55,
+          "width_m": 0.35,
+          "height_m": 0.15,
+          "unit_gap_m": 0.02
+        },
+        "wall_racks_count": 0,
+        "island_rows_count": 4,
+        "cross_aisles_count": 2,
+        "shelf_thickness_m": 0.04,
+        "floor_deck_height_m": 0.1,
+        "wall_clearance_m": 0.2,
+        "shelf_vertical_gap_m": 0.04,
+        "preferred_units_along_single_line": null
+      },
+      "eaves_height_m": 5.0,
+      "ridge_height_m": 6.5,
+      "load_top_height_m": null,
+      "berm": {
+        "crest_elevation_above_load_m": 1.5,
+        "crest_width_m": 1.0,
+        "soil_material": "plastic_clay_loam",
+        "natural_slope_angle_deg": 45.0,
+        "wall_to_inner_toe_clearance_m": 1.5,
+        "has_entrance_screen_berm": true,
+        "entrance_opening_width_m": 4.5,
+        "screen_overlap_each_side_m": 2.0
+      },
+      "lightning": {
+        "method": "single_rod_so_153",
+        "protection_level": "I",
+        "reliability": "0.999",
+        "zone_type": null,
+        "masts": [
+          {
+            "mast_id": "M3",
+            "x_m": 8.245000000000001,
+            "y_m": 0.0,
+            "height_h_m": 25.0
+          },
+          {
+            "mast_id": "M4",
+            "x_m": -8.245000000000001,
+            "y_m": 0.0,
+            "height_h_m": 25.0
+          }
+        ],
+        "vent_height_m": null
+      }
+    }
+  ],
+  "settings": {
+    "detonation_formula": "max_conservative",
+    "uvv_placement": null,
+    "uvv_method": "table_2_formulas",
+    "wall_thickness_m": 0.4
+  }
+}
