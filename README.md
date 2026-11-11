@@ -23,7 +23,7 @@ examples/       демонстрационный файл проекта demo_pr
 scripts/        генерация эталонных DXF, DOCX и demo_project.json
 tests/          тесты pytest, эталонные данные в tests/fixtures/
 Documentation/  тексты НПА (PDF)
-docs/           сверка с НПА (norms_verification.md) и реестр допущений (assumptions.md)
+docs/           сверка с НПА (norms_verification.md), реестр допущений (assumptions.md) и план работ (ROADMAP.md)
 ```
 
 ## Файл проекта
