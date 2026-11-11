@@ -11,6 +11,7 @@ from explosions_core.domain import (
     CalculationSettings,
     ExplosiveItem,
     ExternalProtectedObject,
+    InternalLayoutConfig,
     LightningArresterMast,
     LightningSpec,
     MobileWarehouseConfig,
@@ -60,7 +61,33 @@ BUILDING_PLACEMENT_LAYOUT = FormLayout(
 
 EXPLOSIVE_LAYOUT = FormLayout(
     basic=("name", "mass_kg", "group", "hazard_subclass", "detonation_class"),
-    advanced=("si_count", "is_initiating_device", "is_black_powder", "is_smokeless_powder", "is_detonating_cord"),
+    advanced=(
+        "tnt_equivalent_coeff",
+        "si_count",
+        "is_initiating_device",
+        "is_black_powder",
+        "is_smokeless_powder",
+        "is_detonating_cord",
+    ),
+)
+
+# Шаг 3: фактическая планировка существующего хранилища (проверка п. 579–580 без расчета габаритов)
+ACTUAL_LAYOUT_STEP_LAYOUT = FormLayout(basic=("layout",), advanced=())
+
+INTERNAL_LAYOUT = FormLayout(
+    basic=(
+        "storage_method",
+        "packaging",
+        "unsealed_bc_or_black_powder",
+        "wall_clearance_m",
+        "floor_deck_height_m",
+        "aisle_width_stack_m",
+        "aisle_width_rack_m",
+        "stack_height_m",
+        "rack_shelf_height_m",
+        "tiers_per_shelf",
+    ),
+    advanced=(),
 )
 
 SIZING_LAYOUT = FormLayout(
@@ -142,6 +169,8 @@ ALL_LAYOUTS: dict[str, FormLayout] = {
     "unloading_platform": UNLOADING_PLATFORM_LAYOUT,
     "mobile_warehouse": MOBILE_WAREHOUSE_LAYOUT,
     "explosive": EXPLOSIVE_LAYOUT,
+    "actual_layout_step": ACTUAL_LAYOUT_STEP_LAYOUT,
+    "internal_layout": INTERNAL_LAYOUT,
     "sizing": SIZING_LAYOUT,
     "unit_spec": UNIT_PACKAGE_LAYOUT,
     "placement": PLACEMENT_LAYOUT,
@@ -162,6 +191,8 @@ LAYOUT_MODELS = {
     "unloading_platform": UnloadingPlatformConfig,
     "mobile_warehouse": MobileWarehouseConfig,
     "explosive": ExplosiveItem,
+    "actual_layout_step": StorageBuilding,
+    "internal_layout": InternalLayoutConfig,
     "sizing": StorageSizingInput,
     "unit_spec": UnitPackageSpec,
     "placement": StorageDesignInput,
@@ -180,6 +211,7 @@ MODEL_LAYOUTS: dict[type, FormLayout] = {
     LightningSpec: LIGHTNING_LAYOUT,
     LightningArresterMast: MAST_LAYOUT,
     ExplosiveItem: EXPLOSIVE_LAYOUT,
+    InternalLayoutConfig: INTERNAL_LAYOUT,
     ExternalProtectedObject: TARGET_LAYOUT,
     UnloadingPlatformConfig: UNLOADING_PLATFORM_LAYOUT,
     MobileWarehouseConfig: MOBILE_WAREHOUSE_LAYOUT,

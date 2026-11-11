@@ -177,7 +177,7 @@ def test_storage_gate_width_follows_entrance_opening(tmp_path: Path) -> None:
     export_storage_detail_dxf(
         sizing_input, sizing_result, berm_input, berm_result, masts, lightning_result, output
     )
-    doc = ezdxf.readfile(output)
+    doc = ezdxf.readfile(output, encoding="utf-8")
     walls = [
         entity
         for entity in doc.modelspace().query("LWPOLYLINE")
@@ -200,7 +200,7 @@ def test_master_plan_fire_ban_zone_is_built_from_storages_not_fence(tmp_path: Pa
         {record.storage_id: record.result for record in data.berm_records},
         output,
     )
-    doc = ezdxf.readfile(output)
+    doc = ezdxf.readfile(output, encoding="utf-8")
     polylines = [
         entity
         for entity in doc.modelspace().query("LWPOLYLINE")

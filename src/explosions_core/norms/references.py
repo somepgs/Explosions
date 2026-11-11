@@ -18,6 +18,7 @@ CLAUSE_COMPATIBILITY_EXCEPTION: Final = f"п. 9 {ORDER_343_EDITION}"
 # Внутренняя планировка хранилищ (п. 579–580)
 CLAUSE_STACK: Final = f"п. 579 {ORDER_343_EDITION}"
 CLAUSE_RACK: Final = f"п. 580 {ORDER_343_EDITION}"
+CLAUSE_LAYOUT: Final = f"п. 579–580 {ORDER_343_EDITION}"
 
 # Генплан стационарного склада: запретная зона, ограда, расстояния (п. 590, 592, 593)
 CLAUSE_FORBIDDEN_ZONE: Final = f"п. 590 (подпункт 5) {ORDER_343_EDITION}"
@@ -29,6 +30,11 @@ CLAUSE_TEMPORARY_AS_PERMANENT: Final = f"п. 618 (в остальном как �
 CLAUSE_SHORT_TERM: Final = f"п. 621 {ORDER_343_EDITION}"
 CLAUSE_OPEN_FIRE: Final = f"п. 16 {ORDER_343_EDITION}"
 CLAUSE_PRP: Final = f"п. 48 {ORDER_343_EDITION}"
+
+# Генплан по типу склада — сводно для чек-листа записки (раздел 8)
+CLAUSE_PERIMETER_PERMANENT: Final = f"п. 590 (подпункт 5), 592, 593, 16 {ORDER_343_EDITION}"
+CLAUSE_PERIMETER_TEMPORARY: Final = f"п. 618 (и п. 590, 592, 593), 16 {ORDER_343_EDITION}"
+CLAUSE_PERIMETER_SHORT_TERM: Final = f"п. 621, 16 {ORDER_343_EDITION}"
 
 # Совместная перевозка ВВ и СИ (п. 74)
 CLAUSE_MOBILE_PAYLOAD: Final = f"п. 74 (подпункт 1) {ORDER_343_EDITION}"
@@ -55,11 +61,16 @@ CLAUSE_BERM_SCREEN: Final = f"п. 605 {ORDER_343_EDITION}"
 # Молниезащита (СП РК 2.04-103-2013, сверено с PDF в Documentation)
 CLAUSE_LIGHTNING_SPHERE: Final = f"п. 7.2 (формулы (2-1), (2-1а)) {SP_LIGHTNING}"
 CLAUSE_LIGHTNING_PROTECTION_LEVEL: Final = f"табл. 2 {SP_LIGHTNING} (радиус катящейся сферы по уровню защиты)"
-CLAUSE_LIGHTNING_ZONES_RD: Final = "РД 34.21.122-87 «Инструкция по устройству молниезащиты зданий и сооружений» (текст в Documentation отсутствует, зоны А и Б как альтернативный метод)"
+CLAUSE_LIGHTNING_ZONES_RD: Final = "РД 34.21.122-87 «Инструкция по устройству молниезащиты зданий и сооружений» (формулы зон А и Б с текстом не сверены, альтернативный метод)"
 SO_153_LIGHTNING: Final = "СО 153-34.21.122-2003 «Инструкция по устройству молниезащиты зданий, сооружений и промышленных коммуникаций»"
 CLAUSE_LIGHTNING_SO153: Final = f"п. 3.3.2.1, табл. 3.4, формула (3.1) {SO_153_LIGHTNING}"
 CLAUSE_LIGHTNING_SO153_RELIABILITY: Final = f"п. 2.2 {SO_153_LIGHTNING} (специальные объекты: надежность 0,9–0,999)"
 CLAUSE_LIGHTNING_REQUIRED: Final = f"п. 691 и п. 693 {ORDER_343_EDITION}"
+CLAUSE_LIGHTNING_PROTECTION: Final = f"п. 691 {ORDER_343_EDITION}"
+# Контрольные точки кровли вне зоны защиты: требование п. 691 и метод построения зоны
+CLAUSE_LIGHTNING_COVERAGE_SPHERE: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_SPHERE}"
+CLAUSE_LIGHTNING_COVERAGE_SO153: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_SO153}"
+CLAUSE_LIGHTNING_COVERAGE_RD: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_ZONES_RD}"
 CLAUSE_ARRESTER_CLEARANCE: Final = f"5 м от опоры молниеотвода до стен хранилища по заданию № 4 (в {SP_LIGHTNING} отсутствует; п. 9.3 отсылает к ПУЭ, табл. 15)"
 
 # Таблица 3 Приложения 11 (допустимые расстояния до объектов по УВВ, п. 10, подпункт 7)
@@ -67,6 +78,16 @@ CLAUSE_UVV_TABLE_3: Final = f"таблица 3 Приложения 11 (п. 10, 
 
 # Классификация ВМ по ТР ТС 028/2012 (Приложение 3: шифры по группам совместимости)
 CLAUSE_TR_TS_CLASSIFICATION: Final = "Приложение 3 ТР ТС 028/2012 (шифры подклассов по группам совместимости)"
+
+# Краткие ссылки для надписей на чертежах DXF и в подсказках интерфейса (полные — выше)
+ORDER_343_SHORT: Final = "Приказа № 343"
+DRAWING_CLAUSE_LAYOUT: Final = f"п. 579-580 {ORDER_343_SHORT}"
+DRAWING_CLAUSE_STACK: Final = "п. 579"
+DRAWING_CLAUSE_BERM_CREST: Final = "п. 604"
+DRAWING_CLAUSE_DETONATION: Final = "п. 15 Прил. 11"
+DRAWING_CLAUSE_LIGHTNING_SPHERE: Final = f"{SP_LIGHTNING}, п. 7.2"
+DRAWING_CLAUSE_LIGHTNING_SO153: Final = "СО 153-34.21.122-2003, табл. 3.4"
+DRAWING_CLAUSE_LIGHTNING_RD: Final = "РД 34.21.122-87"
 
 # Раздел 1 расчетно-пояснительной записки: перечень НПА с реквизитами
 NPA_LIST: Final[tuple[str, ...]] = (

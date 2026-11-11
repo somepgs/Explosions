@@ -139,7 +139,7 @@ def test_low_mast_leaves_roof_points_outside_zone_a():
     assert result.is_fully_protected is False
     assert "Торец конька (восток)" in result.unprotected_points
     assert "Верх дефлектора вентшахты" in result.unprotected_points
-    assert result.violations == []
+    assert _codes(result.violations) == ["LIGHTNING_ZONE_NOT_COVERED"]
 
 
 def test_auto_selected_mast_height_covers_all_points():

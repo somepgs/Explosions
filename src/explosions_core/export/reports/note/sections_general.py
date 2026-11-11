@@ -43,7 +43,13 @@ from explosions_core.export.reports.note.common import (
     storage_index,
 )
 from explosions_core.export.reports.note.records import StorageSizingRecord
-from explosions_core.norms.references import CLAUSE_RACK, CLAUSE_STACK, NPA_LIST
+from explosions_core.norms.references import (
+    CLAUSE_COMPATIBILITY,
+    CLAUSE_COMPATIBILITY_EXCEPTION,
+    CLAUSE_RACK,
+    CLAUSE_STACK,
+    NPA_LIST,
+)
 from explosions_core.validators.compatibility import check_storage_compatibility
 
 CATEGORY_LABELS = {WarehouseCategory.BASIS: "основной склад", WarehouseCategory.EXPENDABLE: "расходный склад"}
@@ -155,15 +161,17 @@ def add_section_2(doc, project: WarehouseProjectInput) -> None:
         compatibility = check_storage_compatibility(storage)
         groups = sorted({item.group.value for item in storage.items})
         conclusion = (
-            f"группы не конфликтуют, совместное хранение в «{storage.name}» допустимо по п. 8 Приложения 2 Приказа № 343"
+            f"группы не конфликтуют, совместное хранение в «{storage.name}» допустимо "
+            f"({CLAUSE_COMPATIBILITY}; {CLAUSE_COMPATIBILITY_EXCEPTION})"
             if compatibility.is_valid
-            else f"в «{storage.name}» смешаны несовместимые группы; раздельное хранение по п. 8 "
-            "Приложения 2 Приказа № 343 обязательно"
+            else f"в «{storage.name}» смешаны несовместимые группы; раздельное хранение обязательно "
+            f"({CLAUSE_COMPATIBILITY})"
         )
         add_step(
             doc,
             f"Совместимость ВМ в хранилище «{storage.name}»",
-            "N_{гр} = число различных групп G_{i};  N_{гр} ≤ 1 (исключение п. 9: дымный порох D и бездымный порох C)",
+            "N_{гр} = число различных групп G_{i};  N_{гр} ≤ 1 (исключения п. 9: дымный порох D с бездымным C; "
+            "группа G с B, C, D; детонирующий шнур D с детонаторами B)",
             f"N_{{гр}} = {len(groups)} ({', '.join(groups) if groups else '—'})",
             conclusion,
             ok=compatibility.is_valid,

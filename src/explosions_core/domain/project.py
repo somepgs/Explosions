@@ -113,6 +113,10 @@ class ProjectCalculationResult(BaseModel):
     detonation_results: list[DetonationPairResult] = Field(default_factory=list)
     uvv_results: list[UVVDistanceResult] = Field(default_factory=list)
     issues: list[CalculationIssue] = Field(default_factory=list)
+    settings: CalculationSettings = Field(
+        default_factory=CalculationSettings,
+        description="настройки, с которыми выполнен расчет (методы, толщина стен для чертежей)",
+    )
 
     @property
     def all_violations(self) -> list[NormativeViolation]:

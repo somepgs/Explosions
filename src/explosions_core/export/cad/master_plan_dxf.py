@@ -1,4 +1,8 @@
-"""Чертеж № 2: генеральный план склада ВМ и ситуационная схема безопасных расстояний (r_д и R_увв)."""
+"""Чертеж № 2: генеральный план склада ВМ и ситуационная схема безопасных расстояний (r_д и R_увв).
+
+Ограда, запретная зона, зона запрета огня, караульное помещение и навес для тары строятся по проектным
+расстояниям; если расстояние не задано — по нормативному минимуму для типа склада (`calc.site_plan`).
+"""
 
 import math
 from pathlib import Path
@@ -11,6 +15,7 @@ from explosions_core.calc.geometry import (
     storages_bounds,
 )
 from explosions_core.calc.safe_distances import calculate_explosive_mass
+from explosions_core.calc.site_plan import SitePlanDistances, site_plan_distances
 from explosions_core.domain import (
     BermDesignResult,
     DetonationPairResult,
@@ -37,21 +42,18 @@ from explosions_core.export.cad.dxf_styles import (
     draw_table,
     save_document,
 )
-from explosions_core.norms.constants_rk343 import (
-    MIN_DIST_FENCE_TO_GUARDHOUSE_M,
-    MIN_DIST_FENCE_TO_STORAGE_M,
-    MIN_DIST_FENCE_TO_TARE_STORAGE_M,
-    MIN_FORBIDDEN_ZONE_WIDTH_M,
-    MIN_OPEN_FIRE_BAN_RADIUS_M,
-)
+from explosions_core.norms.references import DRAWING_CLAUSE_DETONATION
 
+# Условные размеры и положение объектов на схеме (оформление чертежа, не нормативы)
 PRP_HALF_LENGTH_M = 10.0
 PRP_HALF_WIDTH_M = 5.0
+PRP_SCHEMATIC_GAP_FROM_FENCE_M = 25.0
 GUARDHOUSE_HALF_SIZE_M = 3.0
 TARE_HALF_SIZE_M = 4.0
 TARGET_MARK_HALF_SIZE_M = 2.0
 LABEL_OFFSET_M = 1.0
 TABLE_ROW_HEIGHT_M = 2.0
+TABLE_GAP_M = 10.0
 TABLE_COLUMN_WIDTHS_M = [8.0, 6.0, 8.0, 8.0]
 DEFAULT_BEARING_STEP_DEG = 360.0
 
@@ -68,14 +70,15 @@ def export_master_plan_dxf(
 
     storages = [item for item in project_input.storages if item.x_m is not None and item.y_m is not None]
     storages_by_id = {storage_key(item): item for item in storages}
+    distances = site_plan_distances(project_input)
 
     _draw_storages(msp, storages, berm_results)
     _draw_detonation_zones(msp, storages_by_id, detonation_results)
-    fence = _draw_perimeter(msp, storages)
+    fence, bottom_y = _draw_perimeter(msp, storages, distances)
     _draw_uvv_zones(msp, storages_by_id, uvv_results)
     _draw_external_targets(msp, project_input, fence)
-    _draw_fixed_objects(msp, fence)
-    _draw_summary_table(msp, fence, detonation_results, uvv_results)
+    _draw_fixed_objects(msp, fence, distances, has_prp=project_input.unloading_platform is not None)
+    _draw_summary_table(msp, (fence[0], bottom_y - TABLE_GAP_M), detonation_results, uvv_results)
 
     return save_document(doc, output_path)
 
@@ -141,18 +144,29 @@ def _draw_detonation_zones(
             distance=LABEL_OFFSET_M,
             text=(
                 f"L_факт = {result.actual_clear_distance_m:.2f} м {relation} "
-                f"r_д = {result.governing_required_r_d_m:.2f} м (п. 15 Прил. 11){status}"
+                f"r_д = {result.governing_required_r_d_m:.2f} м ({DRAWING_CLAUSE_DETONATION}){status}"
             ),
         )
 
 
-def _draw_perimeter(msp, storages: list[StorageBuilding]) -> tuple[float, float, float, float]:
+def _draw_perimeter(
+    msp,
+    storages: list[StorageBuilding],
+    distances: SitePlanDistances,
+) -> tuple[tuple[float, float, float, float], float]:
+    """Ограда, запретная зона и зона запрета огня; возвращает контур ограды и нижнюю отметку зон."""
     building_zone = storages_bounds(storages)
-    fence = offset_bounds(building_zone, MIN_DIST_FENCE_TO_STORAGE_M)
+    fence = offset_bounds(building_zone, distances.fence_to_storage_m)
     add_rectangle(msp, *fence, LAYER_PERIMETER)
-    add_rectangle(msp, *offset_bounds(fence, MIN_FORBIDDEN_ZONE_WIDTH_M), LAYER_PERIMETER)
-    add_rectangle(msp, *offset_bounds(building_zone, MIN_OPEN_FIRE_BAN_RADIUS_M), LAYER_PERIMETER)
-    return fence
+    bottoms = [fence[1]]
+    if distances.forbidden_zone_width_m is not None:
+        zone = offset_bounds(fence, distances.forbidden_zone_width_m)
+        add_rectangle(msp, *zone, LAYER_PERIMETER)
+        bottoms.append(zone[1])
+    fire = offset_bounds(building_zone, distances.open_fire_ban_radius_m)
+    add_rectangle(msp, *fire, LAYER_PERIMETER)
+    bottoms.append(fire[1])
+    return fence, min(bottoms)
 
 
 def _draw_uvv_zones(
@@ -197,9 +211,15 @@ def _draw_external_targets(
         )
 
 
-def _draw_fixed_objects(msp, fence: tuple[float, float, float, float]) -> None:
+def _draw_fixed_objects(
+    msp,
+    fence: tuple[float, float, float, float],
+    distances: SitePlanDistances,
+    *,
+    has_prp: bool,
+) -> None:
     fx1, fy1, fx2, fy2 = fence
-    guard_x = fx2 + MIN_DIST_FENCE_TO_GUARDHOUSE_M
+    guard_x = fx2 + distances.fence_to_guardhouse_m
     guard_y = fy1
     add_rectangle(
         msp,
@@ -211,20 +231,22 @@ def _draw_fixed_objects(msp, fence: tuple[float, float, float, float]) -> None:
     )
     add_text(msp, "Караульное помещение", (guard_x, guard_y + GUARDHOUSE_HALF_SIZE_M * 2.0 + LABEL_OFFSET_M), LAYER_DIMENSIONS)
 
-    tare_x = fx1 - MIN_DIST_FENCE_TO_TARE_STORAGE_M - TARE_HALF_SIZE_M * 2.0
-    tare_y = fy2 - TARE_HALF_SIZE_M * 2.0
-    add_rectangle(msp, tare_x, tare_y, tare_x + TARE_HALF_SIZE_M * 2.0, tare_y + TARE_HALF_SIZE_M * 2.0, LAYER_PERIMETER)
-    add_text(msp, "Склад тары", (tare_x, tare_y - LABEL_OFFSET_M), LAYER_DIMENSIONS)
+    if distances.fence_to_tare_storage_m is not None:
+        tare_x = fx1 - distances.fence_to_tare_storage_m - TARE_HALF_SIZE_M * 2.0
+        tare_y = fy2 - TARE_HALF_SIZE_M * 2.0
+        add_rectangle(msp, tare_x, tare_y, tare_x + TARE_HALF_SIZE_M * 2.0, tare_y + TARE_HALF_SIZE_M * 2.0, LAYER_PERIMETER)
+        add_text(msp, "Склад тары", (tare_x, tare_y - LABEL_OFFSET_M), LAYER_DIMENSIONS)
 
-    prp_x = fx1 - PRP_HALF_LENGTH_M * 2.0 - MIN_DIST_FENCE_TO_TARE_STORAGE_M
-    prp_y = fy1
-    add_rectangle(msp, prp_x, prp_y, prp_x + PRP_HALF_LENGTH_M * 2.0, prp_y + PRP_HALF_WIDTH_M * 2.0, LAYER_PERIMETER)
-    add_text(msp, "ПРП (п. 48)", (prp_x, prp_y - LABEL_OFFSET_M), LAYER_DIMENSIONS)
+    if has_prp:
+        prp_x = fx1 - PRP_HALF_LENGTH_M * 2.0 - PRP_SCHEMATIC_GAP_FROM_FENCE_M
+        prp_y = fy1
+        add_rectangle(msp, prp_x, prp_y, prp_x + PRP_HALF_LENGTH_M * 2.0, prp_y + PRP_HALF_WIDTH_M * 2.0, LAYER_PERIMETER)
+        add_text(msp, "ПРП (схематично)", (prp_x, prp_y - LABEL_OFFSET_M), LAYER_DIMENSIONS)
 
 
 def _draw_summary_table(
     msp,
-    fence: tuple[float, float, float, float],
+    origin: tuple[float, float],
     detonation_results: list[DetonationPairResult],
     uvv_results: list[UVVDistanceResult],
 ) -> None:
@@ -247,7 +269,6 @@ def _draw_summary_table(
                 "OK" if result.is_safe else "НАРУШЕНИЕ",
             ]
         )
-    origin = (fence[0], fence[1] - MIN_FORBIDDEN_ZONE_WIDTH_M - 10.0)
     draw_table(msp, origin, TABLE_COLUMN_WIDTHS_M, rows, TABLE_ROW_HEIGHT_M, LAYER_DIMENSIONS, text_height=TEXT_HEIGHT_M)
     add_mtext(
         msp,

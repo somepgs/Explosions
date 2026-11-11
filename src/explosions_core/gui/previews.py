@@ -12,7 +12,9 @@ from explosions_core.domain import NormativeViolation, ProjectCalculationResult,
 from explosions_core.gui.explanations import explain_violation
 from explosions_core.gui.labels import enum_label
 from explosions_core.gui.results_view import fmt
+from explosions_core.norms.references import DRAWING_CLAUSE_DETONATION
 from explosions_core.validators.compatibility import check_classification_codes, check_storage_compatibility
+from explosions_core.validators.layout_and_perimeter import validate_internal_layout
 
 NO_RESULT_TEXT = "Расчет пока невозможен: заполните обязательные поля этого шага и шага «Хранилища и ВМ»."
 
@@ -56,6 +58,23 @@ def storage_check_lines(storage: dict[str, Any]) -> list[str]:
     return lines
 
 
+def layout_check_lines(storage: dict[str, Any]) -> list[str]:
+    """Проверка фактической планировки хранилища (п. 579–580), если она задана на шаге 3."""
+    if storage.get("layout") is None:
+        return []
+    try:
+        building = StorageBuilding.model_validate(storage)
+    except ValidationError:
+        return ["⚠ Фактическая планировка: заполните способ хранения и упаковку."]
+    violations = validate_internal_layout(building).violations
+    lines = ["Фактическая планировка:"]
+    if violations:
+        lines.extend(_violation_lines(violations))
+    else:
+        lines.append("✔ Заданные отступы, проходы и высоты соответствуют п. 579–580.")
+    return lines
+
+
 def sizing_preview_lines(result: ProjectCalculationResult | None, key: str, design: dict[str, Any] | None) -> list[str]:
     if design is None or design.get("sizing") is None:
         return ["Раздел «Планировка и габариты» не включен. Включите его, чтобы рассчитать стеллажи или штабели."]
@@ -92,7 +111,7 @@ def placement_preview_lines(result: ProjectCalculationResult | None, key: str, d
             mark = "✔" if pair.is_safe else "✖"
             lines.append(
                 f"{mark} До {other}: L_факт = {fmt(pair.actual_clear_distance_m)} м, "
-                f"требуется r_д = {fmt(pair.governing_required_r_d_m)} м (п. 15 Прил. 11)."
+                f"требуется r_д = {fmt(pair.governing_required_r_d_m)} м ({DRAWING_CLAUSE_DETONATION})."
             )
         if not pairs:
             lines.append("Расстояния r_д: нет второго хранилища с координатами.")

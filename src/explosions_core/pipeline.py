@@ -6,7 +6,11 @@
 
 from explosions_core.calc.berm_calculator import calculate_berm_design
 from explosions_core.calc.geometry import storage_key
-from explosions_core.calc.lightning_protection import calculate_lightning_protection, lightning_required_violation
+from explosions_core.calc.lightning_protection import (
+    calculate_lightning_protection,
+    lightning_protection_required,
+    lightning_required_violation,
+)
 from explosions_core.calc.safe_distances import SafeDistanceEngine
 from explosions_core.calc.storage_sizing import StorageSizingCalculator
 from explosions_core.domain import (
@@ -27,6 +31,7 @@ from explosions_core.domain import (
     ValidationResult,
     WarehouseProjectInput,
 )
+from explosions_core.norms.references import CLAUSE_LIGHTNING_REQUIRED
 from explosions_core.validators.layout_and_perimeter import validate_project
 
 MASS_TOLERANCE_KG = 1e-6
@@ -84,6 +89,7 @@ def calculate_project(definition: ProjectDefinition) -> ProjectCalculationResult
         detonation_results=detonation_results,
         uvv_results=uvv_results,
         issues=issues,
+        settings=definition.settings,
     )
 
 
@@ -221,6 +227,7 @@ def _calculate_lightning(
         return None
     spec = design.lightning
     masts = list(spec.masts)
+    required = lightning_protection_required(storage)
     try:
         result = calculate_lightning_protection(
             masts,
@@ -233,10 +240,23 @@ def _calculate_lightning(
             method=spec.method,
             protection_level=spec.protection_level,
             reliability=spec.reliability,
+            protection_required=required,
         )
     except MODULE_ERRORS as exc:
         issues.append(CalculationIssue(severity="error", module="lightning", object_id=key, message=str(exc)))
         return None
+    if result.unprotected_points and not required:
+        issues.append(
+            CalculationIssue(
+                severity="warning",
+                module="lightning",
+                object_id=key,
+                message=(
+                    f"Вне зоны защиты точки кровли: {', '.join(result.unprotected_points)}. Для этого хранилища "
+                    f"молниезащита не обязательна ({CLAUSE_LIGHTNING_REQUIRED}), но заданные мачты его не защищают"
+                ),
+            )
+        )
     return LightningRecord(
         storage_id=key,
         method=spec.method,

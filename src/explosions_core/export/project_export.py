@@ -64,6 +64,7 @@ def _export_storage_details(result: ProjectCalculationResult, out_dir: Path) -> 
                 lightning.masts,
                 lightning.result,
                 path,
+                wall_thickness_m=result.settings.wall_thickness_m,
             )
         )
     return written

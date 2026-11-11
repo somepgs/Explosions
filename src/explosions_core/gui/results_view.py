@@ -11,9 +11,12 @@ STATUS_FAIL = "fail"
 STATUS_WARN = "warn"
 
 
-def fmt(value: float | int | None, digits: int = 2) -> str:
+def fmt(value: float | int | str | None, digits: int = 2) -> str:
+    """Число с десятичной запятой; текстовое значение (например, у нарушений совместимости) — без изменений."""
     if value is None:
         return "—"
+    if isinstance(value, str):
+        return value
     return f"{float(value):.{digits}f}".replace(".", ",")
 
 

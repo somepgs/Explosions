@@ -13,7 +13,7 @@ from explosions_core.domain import (
 )
 from explosions_core.export.reports.docx_styles import add_heading, add_paragraph, add_table
 from explosions_core.export.reports.note.common import add_step, add_violations, fmt, storage_index
-from explosions_core.norms.references import CLAUSE_UVV_TABLE_3
+from explosions_core.norms.references import CLAUSE_UVV, CLAUSE_UVV_TABLE_3
 
 PLACEMENT_TEXT = {
     ChargePlacementType.OPEN_SURFACE: "открытый",
@@ -186,7 +186,7 @@ def add_section_5(doc, project: WarehouseProjectInput, uvv_results: list[UVVDist
                 f"{symbol} = {fmt(coeff)} ({range_text}); Q = {fmt(q_kg)} кг; k_{{рел}} = {fmt(k_rel)}: "
                 f"r_{{в}} = {fmt(coeff)} · {fmt(root)} · {fmt(k_rel)} = {fmt(required)} м"
             )
-            norm_text = "п. 573 и п. 10 Приложения 11"
+            norm_text = CLAUSE_UVV
         conclusion = (
             f"L_{{факт}} = {fmt(result.actual_distance_m)} м {'≥' if result.is_safe else '<'} "
             f"R_{{увв}} = {fmt(required)} м: "

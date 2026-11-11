@@ -3,6 +3,7 @@
 import math
 
 from explosions_core.norms.constants_rk343 import (
+    ARRESTER_HEIGHT_SEARCH_STEP_M,
     MIN_ARRESTER_CLEARANCE_FROM_STORAGE_WALL_M,
     MIN_BERM_CREST_ELEVATION_ABOVE_LOAD_M,
     MIN_BERM_CREST_WIDTH_M,
@@ -389,7 +390,11 @@ def add_section_7(doc, project: WarehouseProjectInput, lightning_records: list[L
             _add_mast_block(doc, record, mast)
         add_violations(doc, record.result.violations)
         checkpoints = generate_storage_checkpoints_3d(
-            record.storage_length_m, record.storage_width_m, record.eaves_height_m, record.ridge_height_m
+            record.storage_length_m,
+            record.storage_width_m,
+            record.eaves_height_m,
+            record.ridge_height_m,
+            record.vent_height_m,
         )
         for point in checkpoints:
             mast, distance, rx = _best_mast(point, record)
@@ -413,7 +418,8 @@ def add_section_7(doc, project: WarehouseProjectInput, lightning_records: list[L
             doc,
             "Минимальная высота мачты для покрытия всех точек",
             "h_{min}: все контрольные точки (x_{i}, y_{i}, h_{i}) с d_{i} ≤ r_{x}(h_{i})",
-            f"подбор с шагом 0.1 м: h_{{min}} = {fmt(min_height) if min_height is not None else '—'} м",
+            f"подбор с шагом {fmt(ARRESTER_HEIGHT_SEARCH_STEP_M, 1)} м: "
+            f"h_{{min}} = {fmt(min_height) if min_height is not None else '—'} м",
             "все точки здания покрыты зоной защиты"
             if result.is_fully_protected
             else f"не покрыты точки: {', '.join(result.unprotected_points) or 'нарушения размещения мачт'}",

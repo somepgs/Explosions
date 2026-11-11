@@ -34,9 +34,21 @@ from explosions_core.norms.constants_rk343 import (
     ZONE_B_H0_COEFF,
     ZONE_B_R0_COEFF,
 )
-from explosions_core.norms.references import CLAUSE_ARRESTER_CLEARANCE, CLAUSE_LIGHTNING_REQUIRED
+from explosions_core.norms.references import (
+    CLAUSE_ARRESTER_CLEARANCE,
+    CLAUSE_LIGHTNING_COVERAGE_RD,
+    CLAUSE_LIGHTNING_COVERAGE_SO153,
+    CLAUSE_LIGHTNING_COVERAGE_SPHERE,
+    CLAUSE_LIGHTNING_REQUIRED,
+)
 
 LIGHTNING_REQUIRED_DURATIONS = (WarehouseDuration.PERMANENT, WarehouseDuration.TEMPORARY)
+COVERAGE_CLAUSES: dict[LightningMethod, str] = {
+    LightningMethod.ROLLING_SPHERE_SP_RK: CLAUSE_LIGHTNING_COVERAGE_SPHERE,
+    LightningMethod.SINGLE_ROD_SO_153: CLAUSE_LIGHTNING_COVERAGE_SO153,
+    LightningMethod.ZONES_RD_34_21_122: CLAUSE_LIGHTNING_COVERAGE_RD,
+}
+COVERAGE_REQUIRED_VALUE = "все контрольные точки кровли в зоне защиты"
 
 
 def lightning_protection_required(storage: StorageBuilding) -> bool:
@@ -59,6 +71,28 @@ def lightning_required_violation(storage: StorageBuilding, storage_id: str, *, h
         ),
         actual_value="не задана",
         required_value="защита от ПУМ и вторичных воздействий",
+    )
+
+
+def coverage_violation(
+    unprotected_points: list[str],
+    method: LightningMethod,
+    recommended_height_m: float | None,
+) -> NormativeViolation:
+    """Точки кровли вне зоны защиты: требование п. 691 не выполнено при заданном размещении и высоте мачт."""
+    if recommended_height_m is not None:
+        hint = f"при заданном размещении мачт требуется высота не менее {recommended_height_m:.1f} м"
+    else:
+        hint = (
+            f"при заданном размещении мачт полная защита недостижима до {MAX_ROD_ARRESTER_HEIGHT_M:g} м; "
+            "измените число или положение мачт"
+        )
+    return NormativeViolation(
+        code="LIGHTNING_ZONE_NOT_COVERED",
+        clause=COVERAGE_CLAUSES[method],
+        description=f"Контрольные точки кровли вне зоны защиты молниеотводов; {hint}",
+        actual_value=", ".join(unprotected_points),
+        required_value=COVERAGE_REQUIRED_VALUE,
     )
 
 
@@ -333,7 +367,13 @@ def calculate_lightning_protection(
     method: LightningMethod | None = None,
     protection_level: LightningProtectionLevel | str = LightningProtectionLevel.LEVEL_I,
     reliability: LightningReliability | str = DEFAULT_SO153_RELIABILITY,
+    protection_required: bool = True,
 ) -> LightningProtectionResult:
+    """Зоны защиты мачт и проверка контрольных точек кровли.
+
+    `protection_required` — защита от ПУМ обязательна (п. 691): тогда точки вне зоны защиты дают нарушение
+    `LIGHTNING_ZONE_NOT_COVERED`. Для хранилищ, где защита не обязательна (п. 693), точки только перечисляются.
+    """
     method = resolve_lightning_method(method, zone_type)
     _check_method_arguments(method, zone_type)
     coverage_kwargs = {
@@ -392,6 +432,8 @@ def calculate_lightning_protection(
             _point_covered(mast.x_m, mast.y_m, mast.height_h_m, point, **coverage_kwargs) for mast in masts
         )
     ]
+    if unprotected and protection_required:
+        violations.append(coverage_violation(unprotected, method, solved_height))
 
     return LightningProtectionResult(
         method=method,

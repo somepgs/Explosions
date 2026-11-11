@@ -1,4 +1,9 @@
-"""Чертеж № 1: детальный технологический план хранилища ВМ, обвалования и молниезащиты."""
+"""Чертеж № 1: детальный технологический план хранилища ВМ, обвалования и молниезащиты.
+
+Здание рисуется по фактическим наружным размерам из исходных данных вала (`berm_input`) — тем же, что
+приняты в расчетах обвалования и молниезащиты; внутренний контур — за вычетом толщины стен. Минимальные
+внутренние размеры по п. 579–580 (`sizing_result`) приводятся в экспликации для сравнения.
+"""
 
 from pathlib import Path
 
@@ -36,6 +41,14 @@ from explosions_core.domain import (
     StorageSizingInput,
     StorageSizingResult,
 )
+from explosions_core.norms.references import (
+    DRAWING_CLAUSE_BERM_CREST,
+    DRAWING_CLAUSE_LAYOUT,
+    DRAWING_CLAUSE_LIGHTNING_RD,
+    DRAWING_CLAUSE_LIGHTNING_SO153,
+    DRAWING_CLAUSE_LIGHTNING_SPHERE,
+    DRAWING_CLAUSE_STACK,
+)
 
 DIM_STEP_M = 2.0
 STAMP_GAP_M = 6.0
@@ -50,31 +63,51 @@ def export_storage_detail_dxf(
     lightning_masts: list[LightningArresterMast],
     lightning_result: LightningProtectionResult,
     output_path: Path,
+    *,
+    wall_thickness_m: float = WALL_THICKNESS_M,
 ) -> Path:
+    outer_half_length = berm_input.storage_length_m / 2.0
+    outer_half_width = berm_input.storage_width_m / 2.0
+    half_length = outer_half_length - wall_thickness_m
+    half_width = outer_half_width - wall_thickness_m
+    if half_length <= 0.0 or half_width <= 0.0:
+        raise ValueError(
+            f"Толщина стен {wall_thickness_m:.2f} м не меньше половины размера здания "
+            f"{berm_input.storage_length_m:.2f} × {berm_input.storage_width_m:.2f} м"
+        )
+
     doc = create_document()
     msp = doc.modelspace()
 
-    half_length = sizing_result.min_internal_length_m / 2.0
-    half_width = sizing_result.min_internal_width_m / 2.0
     driveway_half = berm_input.entrance_opening_width_m / 2.0 if berm_input.has_entrance_screen_berm else 0.0
     gate_half = min(berm_input.entrance_opening_width_m / 2.0, half_width)
 
-    _draw_walls(msp, half_length, half_width, gate_half)
+    _draw_walls(msp, half_length, half_width, wall_thickness_m, gate_half)
     _draw_racks_and_stacks(msp, sizing_input, sizing_result, half_length, half_width)
-    _draw_berm(msp, berm_input, berm_result, half_length, half_width, driveway_half)
+    _draw_berm(msp, berm_input, berm_result, outer_half_length, outer_half_width, driveway_half)
     if driveway_half > 0.0 and berm_result.screen_berm_length_m > 0.0:
-        _draw_screen_berm(msp, berm_input, berm_result, half_length)
+        _draw_screen_berm(msp, berm_input, berm_result, outer_half_length)
     _draw_lightning(msp, lightning_masts, lightning_result)
     _draw_dimensions(msp, sizing_input, sizing_result, berm_input, berm_result, half_length, half_width)
-    _draw_stamp(msp, sizing_input, sizing_result, berm_input, berm_result, lightning_result, half_length, half_width)
+    _draw_stamp(
+        msp,
+        sizing_input,
+        sizing_result,
+        berm_input,
+        berm_result,
+        lightning_result,
+        half_length,
+        half_width,
+        wall_thickness_m,
+    )
 
     return save_document(doc, output_path)
 
 
-def _draw_walls(msp, half_length: float, half_width: float, gate_half: float) -> None:
+def _draw_walls(msp, half_length: float, half_width: float, wall_thickness_m: float, gate_half: float) -> None:
     add_rectangle(msp, -half_length, -half_width, half_length, half_width, LAYER_WALLS)
-    outer_length = half_length + WALL_THICKNESS_M
-    outer_width = half_width + WALL_THICKNESS_M
+    outer_length = half_length + wall_thickness_m
+    outer_width = half_width + wall_thickness_m
     add_polyline(
         msp,
         [
@@ -161,12 +194,13 @@ def _draw_unit_columns(
 def _berm_rings(
     berm_input: BermDesignInput,
     berm_result: BermDesignResult,
-    half_length: float,
-    half_width: float,
+    outer_half_length: float,
+    outer_half_width: float,
 ) -> dict[str, float]:
+    """Контуры вала от наружной грани стен: та же геометрия, что в расчете обвалования."""
     run = (berm_result.base_width_m - berm_result.crest_width_m) / 2.0
-    toe_inner_length = half_length + WALL_THICKNESS_M + berm_input.wall_to_inner_toe_clearance_m
-    toe_inner_width = half_width + WALL_THICKNESS_M + berm_input.wall_to_inner_toe_clearance_m
+    toe_inner_length = outer_half_length + berm_input.wall_to_inner_toe_clearance_m
+    toe_inner_width = outer_half_width + berm_input.wall_to_inner_toe_clearance_m
     crest_inner_length = toe_inner_length + run
     crest_inner_width = toe_inner_width + run
     crest_outer_length = crest_inner_length + berm_result.crest_width_m
@@ -190,11 +224,11 @@ def _draw_berm(
     msp,
     berm_input: BermDesignInput,
     berm_result: BermDesignResult,
-    half_length: float,
-    half_width: float,
+    outer_half_length: float,
+    outer_half_width: float,
     driveway_half: float,
 ) -> None:
-    rings = _berm_rings(berm_input, berm_result, half_length, half_width)
+    rings = _berm_rings(berm_input, berm_result, outer_half_length, outer_half_width)
     run = rings["run"]
 
     _draw_ring(msp, rings["toe_inner_length"], rings["toe_inner_width"], driveway_half, LAYER_BERM_TOE)
@@ -265,10 +299,10 @@ def _draw_screen_berm(
     msp,
     berm_input: BermDesignInput,
     berm_result: BermDesignResult,
-    half_length: float,
+    outer_half_length: float,
 ) -> None:
     run = (berm_result.base_width_m - berm_result.crest_width_m) / 2.0
-    toe_outer_edge_x = -(half_length + WALL_THICKNESS_M + berm_input.wall_to_inner_toe_clearance_m + berm_result.base_width_m)
+    toe_outer_edge_x = -(outer_half_length + berm_input.wall_to_inner_toe_clearance_m + berm_result.base_width_m)
     crest_inner_x = toe_outer_edge_x - run
     crest_outer_x = crest_inner_x - berm_result.crest_width_m
     toe_far_x = toe_outer_edge_x - berm_result.base_width_m
@@ -321,7 +355,9 @@ def _draw_dimensions(
     half_length: float,
     half_width: float,
 ) -> None:
-    rings = _berm_rings(berm_input, berm_result, half_length, half_width)
+    outer_half_length = berm_input.storage_length_m / 2.0
+    outer_half_width = berm_input.storage_width_m / 2.0
+    rings = _berm_rings(berm_input, berm_result, outer_half_length, outer_half_width)
     extent_x = rings["toe_outer_length"]
     extent_y = rings["toe_outer_width"]
 
@@ -376,11 +412,11 @@ def _draw_dimensions(
 
 def _lightning_method_label(result: LightningProtectionResult) -> str:
     if result.method == LightningMethod.ROLLING_SPHERE_SP_RK:
-        return f"катящаяся сфера, уровень {result.protection_level.value} (СП РК 2.04-103-2013, п. 7.2)"
+        return f"катящаяся сфера, уровень {result.protection_level.value} ({DRAWING_CLAUSE_LIGHTNING_SPHERE})"
     if result.method == LightningMethod.SINGLE_ROD_SO_153:
-        return f"зона надежностью {result.reliability.value} (СО 153-34.21.122-2003, табл. 3.4)"
+        return f"зона надежностью {result.reliability.value} ({DRAWING_CLAUSE_LIGHTNING_SO153})"
     zone = result.zone_type.value if result.zone_type is not None else "—"
-    return f"{zone} (РД 34.21.122-87)"
+    return f"{zone} ({DRAWING_CLAUSE_LIGHTNING_RD})"
 
 
 def _draw_stamp(
@@ -392,21 +428,25 @@ def _draw_stamp(
     lightning_result: LightningProtectionResult,
     half_length: float,
     half_width: float,
+    wall_thickness_m: float,
 ) -> None:
-    rings = _berm_rings(berm_input, berm_result, half_length, half_width)
+    rings = _berm_rings(berm_input, berm_result, berm_input.storage_length_m / 2.0, berm_input.storage_width_m / 2.0)
     stamp_x = rings["toe_outer_length"] + STAMP_GAP_M
     text = "\n".join(
         [
             "ЭКСПЛИКАЦИЯ ПАРАМЕТРОВ",
-            f"Внутр. длина L = {sizing_result.min_internal_length_m:.2f} м",
-            f"Внутр. ширина W = {sizing_result.min_internal_width_m:.2f} м",
-            f"Ширина прохода = {sizing_result.required_aisle_width_m:.2f} м (п. 579-580 Приказа № 343)",
-            f"Отступ от стен = {sizing_input.wall_clearance_m:.2f} м (п. 579)",
-            f"Высота укладки H = {sizing_result.total_loaded_height_m:.2f} м (п. 579-580)",
+            f"Здание (наружные размеры) {berm_input.storage_length_m:.2f} × {berm_input.storage_width_m:.2f} м, "
+            f"стены {wall_thickness_m:.2f} м",
+            f"Внутр. длина L = {2.0 * half_length:.2f} м (не менее {sizing_result.min_internal_length_m:.2f} м, "
+            f"{DRAWING_CLAUSE_LAYOUT})",
+            f"Внутр. ширина W = {2.0 * half_width:.2f} м (не менее {sizing_result.min_internal_width_m:.2f} м)",
+            f"Ширина прохода = {sizing_result.required_aisle_width_m:.2f} м ({DRAWING_CLAUSE_LAYOUT})",
+            f"Отступ от стен = {sizing_input.wall_clearance_m:.2f} м ({DRAWING_CLAUSE_STACK})",
+            f"Высота укладки H = {sizing_result.total_loaded_height_m:.2f} м ({DRAWING_CLAUSE_LAYOUT})",
             f"Высота обвалования H_в = {berm_result.berm_height_m:.2f} м, гребень на "
-            f"{berm_input.crest_elevation_above_load_m:.2f} м выше груза (п. 604)",
-            f"Ширина вала по верху = {berm_result.crest_width_m:.2f} м (п. 604)",
-            f"Ширина подошвы = {berm_result.base_width_m:.2f} м (п. 604)",
+            f"{berm_input.crest_elevation_above_load_m:.2f} м выше груза ({DRAWING_CLAUSE_BERM_CREST})",
+            f"Ширина вала по верху = {berm_result.crest_width_m:.2f} м ({DRAWING_CLAUSE_BERM_CREST})",
+            f"Ширина подошвы = {berm_result.base_width_m:.2f} м ({DRAWING_CLAUSE_BERM_CREST})",
             f"Молниезащита: {_lightning_method_label(lightning_result)}",
         ]
     )

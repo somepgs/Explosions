@@ -19,11 +19,11 @@ from PySide6.QtWidgets import (
 )
 
 from explosions_core.calc.geometry import offset_bounds, storage_bounds, storages_bounds
+from explosions_core.calc.site_plan import site_plan_distances
 from explosions_core.domain import DetonationPairResult, ProjectCalculationResult, UVVDistanceResult, WarehouseProjectInput
 from explosions_core.domain.storage import StorageBuilding
 from explosions_core.gui.results_view import fmt
 
-FENCE_OFFSET_M = 40.0
 ZONE_FENCE_LABEL = "Ограда (от хранилищ ВМ)"
 COLOR_STORAGE_OK = QColor("#2E7D32")
 COLOR_STORAGE_FAIL = QColor("#C62828")
@@ -127,7 +127,7 @@ class PlanView(QWidget):
             return
         failed = _failed_storage_ids(self._result)
         if self._show_fence.isChecked():
-            self._draw_fence(storages)
+            self._draw_fence(storages, site_plan_distances(self._project).fence_to_storage_m)
         if self._show_rd.isChecked() and self._result is not None:
             self._draw_detonation(self._result.detonation_results, storages)
         if self._show_uvv.isChecked() and self._result is not None:
@@ -149,13 +149,13 @@ class PlanView(QWidget):
         label.setBrush(QBrush(color))
         self._scene.addItem(label)
 
-    def _draw_fence(self, storages: list[StorageBuilding]) -> None:
-        left, bottom, right, top = offset_bounds(storages_bounds(storages), FENCE_OFFSET_M)
+    def _draw_fence(self, storages: list[StorageBuilding], offset_m: float) -> None:
+        left, bottom, right, top = offset_bounds(storages_bounds(storages), offset_m)
         self._scene.addRect(
             QRectF(QPointF(left, -top), QPointF(right, -bottom)),
             QPen(COLOR_FENCE, 0.4, Qt.PenStyle.DashLine),
             QBrush(Qt.BrushStyle.NoBrush),
-        ).setToolTip(ZONE_FENCE_LABEL)
+        ).setToolTip(f"{ZONE_FENCE_LABEL}: {fmt(offset_m)} м")
 
     def _draw_detonation(self, pairs: list[DetonationPairResult], storages: list[StorageBuilding]) -> None:
         centers = {(s.storage_id or s.name): self._center(s) for s in storages}

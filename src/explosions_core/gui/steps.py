@@ -36,6 +36,7 @@ from explosions_core.domain import (
 from explosions_core.gui.forms import ModelForm, ModelTable
 from explosions_core.gui.labels import enum_choices
 from explosions_core.gui.layouts import (
+    ACTUAL_LAYOUT_STEP_LAYOUT,
     BUILDING_PLACEMENT_LAYOUT,
     LIGHTNING_STEP_LAYOUT,
     PLACEMENT_LAYOUT,
@@ -49,6 +50,7 @@ from explosions_core.gui.pages import PlanPage, ResultsPage
 from explosions_core.gui.plan_view import PlanView
 from explosions_core.gui.precheck import ReadinessItem
 from explosions_core.gui.previews import (
+    layout_check_lines,
     lightning_preview_lines,
     placement_preview_lines,
     sizing_preview_lines,
@@ -448,17 +450,22 @@ class StoragesStep(StorageStep):
 
 
 class SizingStep(StorageStep):
-    """Шаг 3: тара и способ хранения; справа — число мест, высота груза и размеры здания."""
+    """Шаг 3: тара и способ хранения; справа — число мест, высота груза и размеры здания.
+
+    Ниже расчета — необязательная фактическая планировка существующего хранилища (проверка п. 579–580).
+    """
 
     preview_title = "Габариты по п. 579–580"
 
     def __init__(self, data: WizardData, parent: QWidget | None = None) -> None:
         super().__init__(data, parent=parent)
         self.sizing_form = self.add_design_form(SIZING_STEP_LAYOUT.basic, SIZING_STEP_LAYOUT.advanced)
+        self.layout_form = self.add_storage_form(ACTUAL_LAYOUT_STEP_LAYOUT.basic, ACTUAL_LAYOUT_STEP_LAYOUT.advanced)
         self.finish_editor()
 
     def preview_lines(self, index: int) -> list[str]:
-        return sizing_preview_lines(self._result, self._data.key(index), self._data.design(index))
+        lines = sizing_preview_lines(self._result, self._data.key(index), self._data.design(index))
+        return lines + layout_check_lines(self._data.storage(index))
 
 
 class PlacementStep(StorageStep):

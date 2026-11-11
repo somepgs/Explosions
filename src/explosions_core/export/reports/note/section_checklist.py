@@ -16,11 +16,15 @@ from explosions_core.norms.references import (
     CLAUSE_COMPATIBILITY,
     CLAUSE_COMPATIBILITY_EXCEPTION,
     CLAUSE_DETONATION,
+    CLAUSE_LAYOUT,
     CLAUSE_LIGHTNING_REQUIRED,
     CLAUSE_LIGHTNING_SO153,
     CLAUSE_LIGHTNING_SPHERE,
     CLAUSE_MOBILE_PAYLOAD,
     CLAUSE_MOBILE_POWDER,
+    CLAUSE_PERIMETER_PERMANENT,
+    CLAUSE_PERIMETER_SHORT_TERM,
+    CLAUSE_PERIMETER_TEMPORARY,
     CLAUSE_PRP,
     CLAUSE_RACK,
     CLAUSE_STACK,
@@ -36,9 +40,9 @@ from explosions_core.validators.layout_and_perimeter import (
 )
 
 PERIMETER_CLAUSES = {
-    WarehouseDuration.PERMANENT: "п. 590 (подпункт 5), 592, 593, 16 Приказа № 343",
-    WarehouseDuration.TEMPORARY: "п. 618 (и п. 590, 592, 593), 16 Приказа № 343",
-    WarehouseDuration.SHORT_TERM: "п. 621, 16 Приказа № 343",
+    WarehouseDuration.PERMANENT: CLAUSE_PERIMETER_PERMANENT,
+    WarehouseDuration.TEMPORARY: CLAUSE_PERIMETER_TEMPORARY,
+    WarehouseDuration.SHORT_TERM: CLAUSE_PERIMETER_SHORT_TERM,
 }
 
 CHECK_ROW_COLUMNS = ["Проверка", "Норма", "Статус", "Детали"]
@@ -87,7 +91,7 @@ def add_section_8(
         ),
         (
             "Внутренняя планировка хранилищ",
-            "п. 579–580 Приказа № 343",
+            CLAUSE_LAYOUT,
             [v for s in project.storages for v in validate_internal_layout(s).violations],
             True,
         ),

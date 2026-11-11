@@ -88,7 +88,7 @@ def test_master_plan_dimension_text_marks_violation(tmp_path: Path) -> None:
         {record.storage_id: record.result for record in data.berm_records},
         output,
     )
-    doc = ezdxf.readfile(output)
+    doc = ezdxf.readfile(output, encoding="utf-8")
     texts = [entity.dxf.text for entity in doc.modelspace().query("DIMENSION")]
     texts += [entity.dxf.text for entity in doc.modelspace().query("MTEXT")]
     assert any("<" in text and "НАРУШЕНИЕ" in text for text in texts if text)
