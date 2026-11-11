@@ -1,11 +1,11 @@
 """Реестр источников нормативных констант.
 
 Для каждой константы `constants_rk343` указаны пункт-источник и статус сверки с PDF в Documentation:
-Приказ МИР РК № 343 (ред. от 02.10.2025) с Приложениями, СП РК 2.04-103-2013, СО 153-34.21.122-2003.
+Приказ МИР РК № 343 (ред. от 02.10.2025) с Приложениями, СП РК 2.04-103-2013, СО 153-34.21.122-2003,
+РД 34.21.122-87, ПУЭ РК (Приказ МЭ РК № 230).
 - VERIFIED — значение найдено в тексте PDF и совпадает;
 - DESIGN_DEFAULT — проектное значение по умолчанию (задания разработки или решение инженера), не норматив;
-- NO_SOURCE_TEXT — источник значения в Documentation отсутствует (РД 34.21.122-87, ПУЭ) или в имеющихся текстах
-  такой нормы нет.
+- NO_SOURCE_TEXT — в имеющихся текстах такой нормы нет (значение из задания разработки, требует решения инженера).
 """
 
 from typing import Final, Literal
@@ -68,18 +68,22 @@ CONSTANT_SOURCES: Final[dict[str, tuple[str, Status]]] = {
     "DEFAULT_SCREEN_OVERLAP_M": ("задание № 4 (п. 605 проверяется расчетом)", DESIGN_DEFAULT),
     "MAX_ROD_ARRESTER_HEIGHT_M": ("СО 153-34.21.122-2003, п. 3.3.2.1 (формулы табл. 3.4 пригодны до 150 м)", VERIFIED),
     "MIN_ARRESTER_CLEARANCE_FROM_STORAGE_WALL_M": (
-        "задание № 4; в СП РК и СО 153 нет, СП РК п. 9.3 отсылает к табл. 15 ПУЭ",
+        "задание № 4; в СП РК, СО 153, РД 34.21.122-87 и ПУЭ РК нет: РД, п. 2.3 задает Sв = 3–4 м и более "
+        "(по сопротивлению грунта, заземлителю и высоте), табл. 15 ПУЭ РК (ссылка СП РК, п. 9.3) — токи кабелей",
         NO_SOURCE_TEXT,
     ),
-    "MIN_GROUNDING_DIST_FROM_ENTRANCE_M": ("задание № 4; в СП РК и СО 153 нет", NO_SOURCE_TEXT),
+    "MIN_GROUNDING_DIST_FROM_ENTRANCE_M": (
+        "задание № 4; в СП РК, СО 153, РД 34.21.122-87 и ПУЭ РК нет: 3 м от входов в РД, п. 2.12 — для токоотводов",
+        NO_SOURCE_TEXT,
+    ),
     "ROLLING_SPHERE_RADIUS_BY_LEVEL_M": ("СП РК 2.04-103-2013, табл. 2 и п. 7.2", VERIFIED),
     "DEFAULT_LIGHTNING_PROTECTION_LEVEL": ("решение инженера (уровень I)", DESIGN_DEFAULT),
     "DEFAULT_SO153_RELIABILITY": ("СО 153-34.21.122-2003, п. 2.2 (диапазон 0,9–0,999; принят максимум)", DESIGN_DEFAULT),
-    "ZONE_A_H0_COEFF": ("РД 34.21.122-87 (нет в Documentation), задание № 4", NO_SOURCE_TEXT),
-    "ZONE_A_R0_BASE": ("РД 34.21.122-87 (нет в Documentation), задание № 4", NO_SOURCE_TEXT),
-    "ZONE_A_R0_SLOPE": ("РД 34.21.122-87 (нет в Documentation), задание № 4", NO_SOURCE_TEXT),
-    "ZONE_B_H0_COEFF": ("РД 34.21.122-87 (нет в Documentation), задание № 4", NO_SOURCE_TEXT),
-    "ZONE_B_R0_COEFF": ("РД 34.21.122-87 (нет в Documentation), задание № 4", NO_SOURCE_TEXT),
+    "ZONE_A_H0_COEFF": ("РД 34.21.122-87, Приложение 3, п. 1.1 (зона А, h ≤ 150 м)", VERIFIED),
+    "ZONE_A_R0_BASE": ("РД 34.21.122-87, Приложение 3, п. 1.1 (зона А, h ≤ 150 м)", VERIFIED),
+    "ZONE_A_R0_SLOPE": ("РД 34.21.122-87, Приложение 3, п. 1.1 (зона А, h ≤ 150 м)", VERIFIED),
+    "ZONE_B_H0_COEFF": ("РД 34.21.122-87, Приложение 3, п. 1.1 (зона Б, h ≤ 150 м)", VERIFIED),
+    "ZONE_B_R0_COEFF": ("РД 34.21.122-87, Приложение 3, п. 1.1 (зона Б, h ≤ 150 м)", VERIFIED),
     "DEFAULT_VENT_ABOVE_RIDGE_M": ("задание № 4", DESIGN_DEFAULT),
     "ARRESTER_HEIGHT_SEARCH_STEP_M": ("задание № 4", DESIGN_DEFAULT),
     "DEFAULT_WALL_THICKNESS_M": ("задание № 5", DESIGN_DEFAULT),

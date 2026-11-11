@@ -155,6 +155,22 @@ def test_every_constant_has_registered_source():
     assert names == set(CONSTANT_SOURCES)
 
 
-def test_lightning_constants_are_marked_as_not_verified():
-    assert "ZONE_A_H0_COEFF" in constants_with_status(NO_SOURCE_TEXT)
-    assert "MIN_FENCE_HEIGHT_PERMANENT_M" in constants_with_status(VERIFIED)
+RD_ZONE_CONSTANTS = ("ZONE_A_H0_COEFF", "ZONE_A_R0_BASE", "ZONE_A_R0_SLOPE", "ZONE_B_H0_COEFF", "ZONE_B_R0_COEFF")
+
+
+def test_lightning_constants_verification_status():
+    verified = constants_with_status(VERIFIED)
+    for name in RD_ZONE_CONSTANTS:
+        assert name in verified
+        assert "РД 34.21.122-87, Приложение 3, п. 1.1" in CONSTANT_SOURCES[name][0]
+    not_found = constants_with_status(NO_SOURCE_TEXT)
+    assert "MIN_ARRESTER_CLEARANCE_FROM_STORAGE_WALL_M" in not_found
+    assert "MIN_GROUNDING_DIST_FROM_ENTRANCE_M" in not_found
+    assert "MIN_FENCE_HEIGHT_PERMANENT_M" in verified
+
+
+def test_rd_zone_constants_match_appendix_3_clause_1_1():
+    assert constants_rk343.ZONE_A_H0_COEFF == 0.85
+    assert (constants_rk343.ZONE_A_R0_BASE, constants_rk343.ZONE_A_R0_SLOPE) == (1.1, 0.002)
+    assert constants_rk343.ZONE_B_H0_COEFF == 0.92
+    assert constants_rk343.ZONE_B_R0_COEFF == 1.5

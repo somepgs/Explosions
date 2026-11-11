@@ -61,7 +61,11 @@ CLAUSE_BERM_SCREEN: Final = f"п. 605 {ORDER_343_EDITION}"
 # Молниезащита (СП РК 2.04-103-2013, сверено с PDF в Documentation)
 CLAUSE_LIGHTNING_SPHERE: Final = f"п. 7.2 (формулы (2-1), (2-1а)) {SP_LIGHTNING}"
 CLAUSE_LIGHTNING_PROTECTION_LEVEL: Final = f"табл. 2 {SP_LIGHTNING} (радиус катящейся сферы по уровню защиты)"
-CLAUSE_LIGHTNING_ZONES_RD: Final = "РД 34.21.122-87 «Инструкция по устройству молниезащиты зданий и сооружений» (формулы зон А и Б с текстом не сверены, альтернативный метод)"
+RD_LIGHTNING: Final = "РД 34.21.122-87 «Инструкция по устройству молниезащиты зданий и сооружений»"
+CLAUSE_LIGHTNING_ZONES_RD: Final = (
+    f"п. 1.1 Приложения 3 {RD_LIGHTNING} (альтернативный метод; по вводной части РД не распространяется "
+    "на здания, связанные с хранением ВВ)"
+)
 SO_153_LIGHTNING: Final = "СО 153-34.21.122-2003 «Инструкция по устройству молниезащиты зданий, сооружений и промышленных коммуникаций»"
 CLAUSE_LIGHTNING_SO153: Final = f"п. 3.3.2.1, табл. 3.4, формула (3.1) {SO_153_LIGHTNING}"
 CLAUSE_LIGHTNING_SO153_RELIABILITY: Final = f"п. 2.2 {SO_153_LIGHTNING} (специальные объекты: надежность 0,9–0,999)"
@@ -71,7 +75,11 @@ CLAUSE_LIGHTNING_PROTECTION: Final = f"п. 691 {ORDER_343_EDITION}"
 CLAUSE_LIGHTNING_COVERAGE_SPHERE: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_SPHERE}"
 CLAUSE_LIGHTNING_COVERAGE_SO153: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_SO153}"
 CLAUSE_LIGHTNING_COVERAGE_RD: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_ZONES_RD}"
-CLAUSE_ARRESTER_CLEARANCE: Final = f"5 м от опоры молниеотвода до стен хранилища по заданию № 4 (в {SP_LIGHTNING} отсутствует; п. 9.3 отсылает к ПУЭ, табл. 15)"
+CLAUSE_ARRESTER_CLEARANCE: Final = (
+    f"5 м от опоры молниеотвода до стен хранилища по заданию № 4 (нормы нет в {SP_LIGHTNING}, СО 153-34.21.122-2003, "
+    "РД 34.21.122-87 и ПУЭ РК: п. 9.3 СП РК отсылает к табл. 15 ПУЭ, в ПУЭ РК это токи кабелей; "
+    "п. 2.3 РД задает Sв от 3 м по грунту и заземлителю)"
+)
 
 # Таблица 3 Приложения 11 (допустимые расстояния до объектов по УВВ, п. 10, подпункт 7)
 CLAUSE_UVV_TABLE_3: Final = f"таблица 3 Приложения 11 (п. 10, подпункт 7) {ORDER_343_EDITION}"
