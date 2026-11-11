@@ -76,8 +76,9 @@ CLAUSE_LIGHTNING_COVERAGE_SPHERE: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAU
 CLAUSE_LIGHTNING_COVERAGE_SO153: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_SO153}"
 CLAUSE_LIGHTNING_COVERAGE_RD: Final = f"{CLAUSE_LIGHTNING_PROTECTION}; {CLAUSE_LIGHTNING_ZONES_RD}"
 CLAUSE_ARRESTER_CLEARANCE: Final = (
-    f"5 м от опоры молниеотвода до стен хранилища по заданию № 4 (нормы нет в {SP_LIGHTNING}, СО 153-34.21.122-2003, "
-    "РД 34.21.122-87 и ПУЭ РК: п. 9.3 СП РК отсылает к табл. 15 ПУЭ, в ПУЭ РК это токи кабелей; "
+    "5 м от опоры молниеотвода до стен хранилища — проектное значение задания № 4 "
+    f"(нормы нет в {SP_LIGHTNING}, СО 153-34.21.122-2003, РД 34.21.122-87 и ПУЭ РК: "
+    "п. 9.3 СП РК отсылает к табл. 15 ПУЭ, в ПУЭ РК это токи кабелей; "
     "п. 2.3 РД задает Sв от 3 м по грунту и заземлителю)"
 )
 

@@ -30,7 +30,7 @@ from explosions_core.norms.constants_rk343 import (
     UVV_FORMULA_MASS_BURIED_THRESHOLD_KG,
     UVV_FORMULA_MASS_OPEN_THRESHOLD_KG,
 )
-from explosions_core.norms.sources import CONSTANT_SOURCES, NO_SOURCE_TEXT, VERIFIED, constants_with_status
+from explosions_core.norms.sources import CONSTANT_SOURCES, DESIGN_DEFAULT, VERIFIED, constants_with_status
 
 B = DEFAULT_STACK_WIDTH_B_M
 DETONATOR_EXPLOSIVE_MASS_KG = 0.0015  # масса ВВ в одном ЭД, пример 2 п. 21 Приложения 11
@@ -163,9 +163,9 @@ def test_lightning_constants_verification_status():
     for name in RD_ZONE_CONSTANTS:
         assert name in verified
         assert "РД 34.21.122-87, Приложение 3, п. 1.1" in CONSTANT_SOURCES[name][0]
-    not_found = constants_with_status(NO_SOURCE_TEXT)
-    assert "MIN_ARRESTER_CLEARANCE_FROM_STORAGE_WALL_M" in not_found
-    assert "MIN_GROUNDING_DIST_FROM_ENTRANCE_M" in not_found
+    design_defaults = constants_with_status(DESIGN_DEFAULT)
+    assert "MIN_ARRESTER_CLEARANCE_FROM_STORAGE_WALL_M" in design_defaults
+    assert "MIN_GROUNDING_DIST_FROM_ENTRANCE_M" in design_defaults
     assert "MIN_FENCE_HEIGHT_PERMANENT_M" in verified
 
 
